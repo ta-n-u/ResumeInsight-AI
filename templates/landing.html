@@ -1,0 +1,706 @@
+<!-- templates/landing.html -->
+{% extends 'base.html' %}
+{% block title %}ResumeInsight AI — Intelligent Resume Screening{% endblock %}
+
+{% block content %}
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: #F8FAFC; color: #0F172A; }
+
+    /* ── Navbar ── */
+    .land-nav {
+        position: fixed; top: 0; left: 0; right: 0;
+        height: 64px; background: rgba(255,255,255,0.95);
+        backdrop-filter: blur(10px);
+        border-bottom: 1px solid #E2E8F0;
+        display: flex; align-items: center;
+        padding: 0 48px; z-index: 100;
+        justify-content: space-between;
+    }
+    .land-brand {
+        display: flex; align-items: center; gap: 10px; text-decoration: none;
+    }
+    .land-brand-icon {
+        width: 36px; height: 36px; background: #2563EB;
+        border-radius: 10px; display: flex; align-items: center;
+        justify-content: center; color: white; font-size: 18px;
+    }
+    .land-brand-text { font-size: 16px; font-weight: 800; color: #0F172A; }
+    .land-brand-text span { color: #2563EB; }
+    .land-nav-links { display: flex; align-items: center; gap: 8px; }
+    .land-nav-link {
+        padding: 8px 16px; border-radius: 8px; text-decoration: none;
+        font-size: 14px; font-weight: 500; color: #64748B; transition: all 0.2s;
+    }
+    .land-nav-link:hover { background: #F1F5F9; color: #0F172A; }
+    .land-btn-login {
+        padding: 8px 20px; border-radius: 8px; text-decoration: none;
+        font-size: 14px; font-weight: 600; color: #2563EB;
+        border: 1.5px solid #2563EB; transition: all 0.2s;
+    }
+    .land-btn-login:hover { background: #EFF6FF; color: #1D4ED8; }
+    .land-btn-signup {
+        padding: 8px 20px; border-radius: 8px; text-decoration: none;
+        font-size: 14px; font-weight: 600; color: white;
+        background: #2563EB; border: 1.5px solid #2563EB; transition: all 0.2s;
+    }
+    .land-btn-signup:hover { background: #1D4ED8; color: white; }
+
+    /* ── Hero ── */
+    .hero {
+        min-height: 100vh;
+        display: flex; align-items: center;
+        background: linear-gradient(135deg, #EFF6FF 0%, #F8FAFC 50%, #F0FDF4 100%);
+        padding: 100px 48px 80px;
+        position: relative; overflow: hidden;
+    }
+    .hero::before {
+        content: '';
+        position: absolute; top: -200px; right: -200px;
+        width: 600px; height: 600px;
+        background: radial-gradient(circle, rgba(37,99,235,0.08) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .hero::after {
+        content: '';
+        position: absolute; bottom: -100px; left: -100px;
+        width: 400px; height: 400px;
+        background: radial-gradient(circle, rgba(5,150,105,0.06) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .hero-content { max-width: 1200px; margin: 0 auto; width: 100%; display: flex; align-items: center; gap: 64px; position: relative; z-index: 1; }
+    .hero-left { flex: 1; }
+    .hero-badge {
+        display: inline-flex; align-items: center; gap: 6px;
+        background: #EFF6FF; color: #2563EB;
+        border: 1px solid #BFDBFE;
+        padding: 5px 14px; border-radius: 20px;
+        font-size: 12px; font-weight: 600;
+        margin-bottom: 20px;
+        letter-spacing: 0.03em;
+    }
+    .hero-title {
+        font-size: 52px; font-weight: 800; line-height: 1.15;
+        color: #0F172A; margin-bottom: 20px;
+    }
+    .hero-title span { color: #2563EB; }
+    .hero-desc {
+        font-size: 17px; line-height: 1.7; color: #475569;
+        margin-bottom: 36px; max-width: 500px;
+    }
+    .hero-actions { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 48px; }
+    .hero-btn-primary {
+        padding: 14px 28px; background: #2563EB; color: white;
+        border-radius: 10px; text-decoration: none; font-size: 15px;
+        font-weight: 700; display: flex; align-items: center; gap: 8px;
+        transition: all 0.2s; box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    }
+    .hero-btn-primary:hover { background: #1D4ED8; color: white; transform: translateY(-1px); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+    .hero-btn-secondary {
+        padding: 14px 28px; background: white; color: #0F172A;
+        border-radius: 10px; text-decoration: none; font-size: 15px;
+        font-weight: 600; border: 1.5px solid #E2E8F0;
+        display: flex; align-items: center; gap: 8px; transition: all 0.2s;
+    }
+    .hero-btn-secondary:hover { border-color: #2563EB; color: #2563EB; background: #EFF6FF; }
+    .hero-stats { display: flex; gap: 32px; }
+    .hero-stat-num { font-size: 26px; font-weight: 800; color: #0F172A; }
+    .hero-stat-label { font-size: 12px; color: #94A3B8; font-weight: 500; }
+
+    /* Hero Right — Feature Preview Card */
+    .hero-right { flex: 0 0 440px; }
+    .preview-card {
+        background: white; border-radius: 16px;
+        border: 1px solid #E2E8F0;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.08);
+        overflow: hidden;
+    }
+    .preview-header {
+        background: #0F172A; padding: 14px 16px;
+        display: flex; align-items: center; gap: 8px;
+    }
+    .preview-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+    }
+    .preview-title { color: #94A3B8; font-size: 12px; margin-left: 8px; }
+    .preview-body { padding: 20px; }
+    .preview-row {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 10px 12px; border-radius: 8px; margin-bottom: 8px;
+        background: #F8FAFC; border: 1px solid #F1F5F9;
+    }
+    .preview-candidate { display: flex; align-items: center; gap: 10px; }
+    .preview-avatar {
+        width: 30px; height: 30px; border-radius: 8px;
+        display: flex; align-items: center; justify-content: center;
+        font-weight: 700; font-size: 12px; color: white;
+    }
+    .preview-name { font-size: 13px; font-weight: 600; color: #0F172A; }
+    .preview-role { font-size: 11px; color: #94A3B8; }
+    .preview-score {
+        padding: 3px 10px; border-radius: 20px;
+        font-size: 12px; font-weight: 700;
+    }
+
+    /* ── Section ── */
+    .section { padding: 80px 48px; }
+    .section-inner { max-width: 1200px; margin: 0 auto; }
+    .section-label {
+        font-size: 12px; font-weight: 700; letter-spacing: 0.1em;
+        text-transform: uppercase; color: #2563EB; margin-bottom: 12px;
+    }
+    .section-title { font-size: 36px; font-weight: 800; color: #0F172A; margin-bottom: 16px; line-height: 1.2; }
+    .section-desc { font-size: 16px; color: #64748B; line-height: 1.7; max-width: 560px; margin-bottom: 48px; }
+
+    /* ── Features ── */
+    .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+    .feature-card {
+        background: white; border: 1px solid #E2E8F0;
+        border-radius: 14px; padding: 28px;
+        transition: all 0.2s;
+    }
+    .feature-card:hover { box-shadow: 0 8px 24px rgba(0,0,0,0.06); transform: translateY(-2px); }
+    .feature-icon-box {
+        width: 48px; height: 48px; border-radius: 12px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 22px; margin-bottom: 16px;
+    }
+    .feature-title { font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 8px; }
+    .feature-desc { font-size: 14px; color: #64748B; line-height: 1.6; }
+
+    /* ── How it works ── */
+    .steps-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 32px; }
+    .step-card { text-align: center; }
+    .step-number {
+        width: 48px; height: 48px; background: #2563EB; color: white;
+        border-radius: 50%; display: flex; align-items: center; justify-content: center;
+        font-size: 18px; font-weight: 800; margin: 0 auto 16px;
+    }
+    .step-title { font-size: 16px; font-weight: 700; color: #0F172A; margin-bottom: 8px; }
+    .step-desc { font-size: 14px; color: #64748B; line-height: 1.6; }
+    .step-connector {
+        position: relative;
+    }
+    .step-connector::after {
+        content: '→';
+        position: absolute; top: -32px; right: -24px;
+        font-size: 20px; color: #CBD5E1;
+    }
+
+    /* ── Tech Stack ── */
+    .tech-grid { display: flex; flex-wrap: wrap; gap: 12px; }
+    .tech-pill {
+        display: flex; align-items: center; gap: 8px;
+        padding: 8px 16px; background: white;
+        border: 1px solid #E2E8F0; border-radius: 10px;
+        font-size: 13px; font-weight: 600; color: #374151;
+        transition: all 0.2s;
+    }
+    .tech-pill:hover { border-color: #2563EB; color: #2563EB; background: #EFF6FF; }
+
+    /* ── CTA ── */
+    .cta-section {
+        background: linear-gradient(135deg, #1E293B 0%, #0F172A 100%);
+        padding: 80px 48px; text-align: center;
+    }
+    .cta-title { font-size: 40px; font-weight: 800; color: white; margin-bottom: 16px; }
+    .cta-desc { font-size: 17px; color: #94A3B8; margin-bottom: 36px; max-width: 520px; margin-left: auto; margin-right: auto; }
+    .cta-btn {
+        display: inline-flex; align-items: center; gap: 8px;
+        padding: 16px 36px; background: #2563EB; color: white;
+        border-radius: 12px; text-decoration: none; font-size: 16px;
+        font-weight: 700; transition: all 0.2s;
+        box-shadow: 0 4px 20px rgba(37,99,235,0.4);
+    }
+    .cta-btn:hover { background: #1D4ED8; color: white; transform: translateY(-2px); }
+
+    /* ── Footer ── */
+    .land-footer {
+        background: #0F172A; padding: 24px 48px;
+        display: flex; align-items: center; justify-content: space-between;
+        border-top: 1px solid #1E293B;
+    }
+    .footer-text { font-size: 13px; color: #475569; }
+    .footer-text span { color: #64748B; }
+
+    /* ── Split Login Section ── */
+    .login-section {
+        background: white;
+        padding: 80px 48px;
+        border-top: 1px solid #E2E8F0;
+    }
+    .login-inner {
+        max-width: 1000px; margin: 0 auto;
+        display: flex; gap: 64px; align-items: center;
+    }
+    .login-left { flex: 1; }
+    .login-right { flex: 0 0 380px; }
+    .login-card {
+        background: #F8FAFC; border: 1px solid #E2E8F0;
+        border-radius: 16px; padding: 32px;
+    }
+    .login-label { font-size: 13px; font-weight: 600; color: #374151; display: block; margin-bottom: 6px; }
+    .login-input {
+        width: 100%; padding: 10px 14px; border-radius: 8px;
+        border: 1.5px solid #E2E8F0; font-size: 14px;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        background: white; margin-bottom: 16px;
+        transition: border-color 0.2s; outline: none;
+    }
+    .login-input:focus { border-color: #2563EB; box-shadow: 0 0 0 3px rgba(37,99,235,0.1); }
+    .login-submit {
+        width: 100%; padding: 12px; background: #2563EB;
+        color: white; border: none; border-radius: 10px;
+        font-size: 15px; font-weight: 700; cursor: pointer;
+        font-family: 'Plus Jakarta Sans', sans-serif; transition: background 0.2s;
+    }
+    .login-submit:hover { background: #1D4ED8; }
+</style>
+
+<!-- ── Navbar ── -->
+<nav class="land-nav">
+    <a href="/" class="land-brand">
+        <div class="land-brand-icon">
+            <i class="bi bi-file-earmark-person-fill"></i>
+        </div>
+        <div class="land-brand-text">
+            ResumeInsight <span>AI</span>
+        </div>
+    </a>
+    <div class="land-nav-links">
+        <a href="#features" class="land-nav-link">Features</a>
+        <a href="#how-it-works" class="land-nav-link">How It Works</a>
+        <a href="#about" class="land-nav-link">About</a>
+        <a href="#login" class="land-nav-link">Sign In</a>
+        <a href="{% url 'login' %}" class="land-btn-login ms-2">Log In</a>
+        <a href="{% url 'signup' %}" class="land-btn-signup ms-2">Get Started</a>
+    </div>
+</nav>
+
+<!-- ── Hero ── -->
+<section class="hero">
+    <div class="hero-content">
+        <div class="hero-left">
+            <div class="hero-badge">
+                <i class="bi bi-stars"></i>
+                NLP-Powered Recruitment
+            </div>
+            <h1 class="hero-title">
+                Smarter Hiring<br>
+                Starts with <span>ResumeInsight</span>
+            </h1>
+            <p class="hero-desc">
+                An intelligent HR tool that uses Natural Language Processing
+                to screen resumes, rank candidates by semantic match, and
+                identify skill gaps — all in seconds.
+            </p>
+            <div class="hero-actions">
+                <a href="{% url 'signup' %}" class="hero-btn-primary">
+                    <i class="bi bi-rocket-takeoff-fill"></i>
+                    Get Started Free
+                </a>
+                <a href="#how-it-works" class="hero-btn-secondary">
+                    <i class="bi bi-play-circle"></i>
+                    See How It Works
+                </a>
+            </div>
+            <div class="hero-stats">
+                <div>
+                    <div class="hero-stat-num">98%</div>
+                    <div class="hero-stat-label">Screening accuracy</div>
+                </div>
+                <div>
+                    <div class="hero-stat-num">10x</div>
+                    <div class="hero-stat-label">Faster than manual</div>
+                </div>
+                <div>
+                    <div class="hero-stat-num">100%</div>
+                    <div class="hero-stat-label">Bias-free with blind mode</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Preview Card -->
+        <div class="hero-right">
+            <div class="preview-card">
+                <div class="preview-header">
+                    <div class="preview-dot" style="background:#EF4444;"></div>
+                    <div class="preview-dot" style="background:#F59E0B;"></div>
+                    <div class="preview-dot" style="background:#10B981;"></div>
+                    <span class="preview-title">Candidate Rankings — Python Developer</span>
+                </div>
+                <div class="preview-body">
+                    <div style="font-size:11px; font-weight:700; letter-spacing:0.08em;
+                                text-transform:uppercase; color:#94A3B8; margin-bottom:12px;">
+                        Top Candidates
+                    </div>
+                    <div class="preview-row">
+                        <div class="preview-candidate">
+                            <div class="preview-avatar" style="background:#2563EB;">R</div>
+                            <div>
+                                <div class="preview-name">Rohan Shrestha</div>
+                                <div class="preview-role">Python • Django • PostgreSQL</div>
+                            </div>
+                        </div>
+                        <span class="preview-score" style="background:#ECFDF5; color:#059669;">
+                            🥇 93%
+                        </span>
+                    </div>
+                    <div class="preview-row">
+                        <div class="preview-candidate">
+                            <div class="preview-avatar" style="background:#7C3AED;">T</div>
+                            <div>
+                                <div class="preview-name">Tanu Yadav</div>
+                                <div class="preview-role">Python • Git • REST API</div>
+                            </div>
+                        </div>
+                        <span class="preview-score" style="background:#ECFDF5; color:#059669;">
+                            🥈 85%
+                        </span>
+                    </div>
+                    <div class="preview-row">
+                        <div class="preview-candidate">
+                            <div class="preview-avatar" style="background:#D97706;">A</div>
+                            <div>
+                                <div class="preview-name">Anjali Chaudhary</div>
+                                <div class="preview-role">JavaScript • MySQL</div>
+                            </div>
+                        </div>
+                        <span class="preview-score" style="background:#FFFBEB; color:#D97706;">
+                            🥉 61%
+                        </span>
+                    </div>
+
+                    <div style="margin-top: 16px; padding: 12px; background: #EFF6FF;
+                                border-radius: 8px; border: 1px solid #BFDBFE;">
+                        <div style="font-size:12px; font-weight:700; color:#1D4ED8; margin-bottom:6px;">
+                            <i class="bi bi-eye-slash-fill me-1"></i> Blind Mode: ON
+                        </div>
+                        <div style="font-size:11px; color:#3B82F6;">
+                            Candidate identities hidden for unbiased review
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Features ── -->
+<section class="section" id="features" style="background: white;">
+    <div class="section-inner">
+        <div class="section-label">Core Features</div>
+        <h2 class="section-title">Everything HR teams need</h2>
+        <p class="section-desc">
+            Built with NLP and machine learning to make every step of
+            resume screening faster, fairer, and more accurate.
+        </p>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon-box" style="background:#EFF6FF;">
+                    <i class="bi bi-cpu-fill" style="color:#2563EB;"></i>
+                </div>
+                <div class="feature-title">NLP Resume Parsing</div>
+                <div class="feature-desc">
+                    Automatically extracts Skills, Education, and Experience
+                    from PDF resumes using spaCy Named Entity Recognition.
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box" style="background:#F0FDF4;">
+                    <i class="bi bi-bar-chart-fill" style="color:#059669;"></i>
+                </div>
+                <div class="feature-title">Semantic Matching</div>
+                <div class="feature-desc">
+                    Uses word embeddings and Cosine Similarity to match
+                    resumes to job descriptions — beyond simple keyword counting.
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box" style="background:#FDF4FF;">
+                    <i class="bi bi-diagram-3-fill" style="color:#9333EA;"></i>
+                </div>
+                <div class="feature-title">Skill Gap Analysis</div>
+                <div class="feature-desc">
+                    Visual Radar/Spider charts showing exactly which required
+                    skills a candidate has and which are missing.
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box" style="background:#FFF7ED;">
+                    <i class="bi bi-eye-slash-fill" style="color:#EA580C;"></i>
+                </div>
+                <div class="feature-title">Blind Screening</div>
+                <div class="feature-desc">
+                    Toggle to hide names, emails and phone numbers —
+                    replacing them with anonymous IDs for bias-free evaluation.
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box" style="background:#FFFBEB;">
+                    <i class="bi bi-trophy-fill" style="color:#D97706;"></i>
+                </div>
+                <div class="feature-title">Candidate Ranking</div>
+                <div class="feature-desc">
+                    Automatically ranks all candidates by their match percentage
+                    so the best fits rise to the top immediately.
+                </div>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon-box" style="background:#F0FDF4;">
+                    <i class="bi bi-shield-check-fill" style="color:#059669;"></i>
+                </div>
+                <div class="feature-title">Secure & Role-Based</div>
+                <div class="feature-desc">
+                    HR Manager and Super Admin roles with secure authentication
+                    and PII protection for all candidate data.
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── How It Works ── -->
+<section class="section" id="how-it-works" style="background:#F8FAFC;">
+    <div class="section-inner">
+        <div class="section-label">The Process</div>
+        <h2 class="section-title">How it works</h2>
+        <p class="section-desc">
+            From resume upload to ranked results in just a few clicks.
+        </p>
+        <div class="steps-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <div class="step-title">Create a Job</div>
+                <div class="step-desc">
+                    HR Manager creates a Job Description with required skills,
+                    experience, and education requirements.
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <div class="step-title">Upload Resumes</div>
+                <div class="step-desc">
+                    Upload candidate PDF resumes. The system extracts text
+                    and runs the NLP pipeline automatically.
+                </div>
+            </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <div class="step-title">Get Rankings</div>
+                <div class="step-desc">
+                    Candidates are ranked by semantic match score. View
+                    detailed skill gap analysis for each one.
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top:48px; background:white; border:1px solid #E2E8F0;
+                    border-radius:14px; padding:24px 28px;">
+            <div style="font-size:13px; font-weight:700; color:#64748B;
+                        text-transform:uppercase; letter-spacing:0.05em; margin-bottom:16px;">
+                Screening Pipeline
+            </div>
+            <div style="display:flex; align-items:center; gap:0; flex-wrap:wrap;">
+               
+                <div style="display:flex; align-items:center;">
+                    <span style="background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;
+                                 padding:6px 14px; border-radius:20px; font-size:12px;
+                                 font-weight:600; white-space:nowrap;">
+                        Resume Upload
+                    </span>
+                    <span style="color:#CBD5E1; font-size:18px; padding:0 6px;">→</span>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <span style="background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;
+                                 padding:6px 14px; border-radius:20px; font-size:12px;
+                                 font-weight:600; white-space:nowrap;">
+                        Text Extraction
+                    </span>
+                    <span style="color:#CBD5E1; font-size:18px; padding:0 6px;">→</span>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <span style="background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;
+                                 padding:6px 14px; border-radius:20px; font-size:12px;
+                                 font-weight:600; white-space:nowrap;">
+                        NLP Categorization
+                    </span>
+                    <span style="color:#CBD5E1; font-size:18px; padding:0 6px;">→</span>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <span style="background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;
+                                 padding:6px 14px; border-radius:20px; font-size:12px;
+                                 font-weight:600; white-space:nowrap;">
+                        Semantic Scoring
+                    </span>
+                    <span style="color:#CBD5E1; font-size:18px; padding:0 6px;">→</span>
+                </div>
+                <div style="display:flex; align-items:center;">
+                    <span style="background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;
+                                 padding:6px 14px; border-radius:20px; font-size:12px;
+                                 font-weight:600; white-space:nowrap;">
+                        Skill Gap
+                    </span>
+                    <span style="color:#CBD5E1; font-size:18px; padding:0 6px;">→</span>
+                </div>
+                <span style="background:#ECFDF5; color:#059669; border:1px solid #A7F3D0;
+                             padding:6px 14px; border-radius:20px; font-size:12px;
+                             font-weight:700; white-space:nowrap;">
+                    ✅ Candidate Ranking
+                </span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── About ── -->
+<section class="section" id="about" style="background:white;">
+    <div class="section-inner">
+        <div class="section-label">About This Project</div>
+        <div style="display:flex; gap:64px; align-items:flex-start;">
+            <div style="flex:1;">
+                <h2 class="section-title">Built for Final Year CSIT</h2>
+                <p style="font-size:15px; line-height:1.8; color:#475569; margin-bottom:16px;">
+                    <strong>ResumeInsight AI</strong> is an intelligent resume screening and
+                    skill gap analysis system developed as a Final Year Project for the
+                    Bachelor of Science in Computer Science and Information Technology (B.Sc. CSIT) program.
+                </p>
+                <p style="font-size:15px; line-height:1.8; color:#475569; margin-bottom:16px;">
+                    The system addresses the challenge HR departments face when dealing with
+                    high volumes of resumes — slow manual screening, inconsistent evaluation,
+                    and unconscious bias. ResumeInsight AI automates the process using NLP
+                    and machine learning to make hiring smarter and fairer.
+                </p>
+                <p style="font-size:15px; line-height:1.8; color:#475569;">
+                    The matching engine goes beyond simple keyword counting by using
+                    <strong>word embeddings</strong> and <strong>Cosine Similarity</strong>
+                    to understand contextual meaning — recognizing that "Developer" and
+                    "Engineer" are semantically similar roles.
+                </p>
+            </div>
+            <div style="flex:0 0 380px;">
+                <div style="background:#F8FAFC; border:1px solid #E2E8F0; border-radius:14px; padding:28px;">
+                    <div style="font-size:13px; font-weight:700; color:#64748B;
+                                text-transform:uppercase; letter-spacing:0.05em; margin-bottom:20px;">
+                        Tech Stack
+                    </div>
+                    <div class="tech-grid">
+                        <div class="tech-pill"><i class="bi bi-filetype-py" style="color:#3B82F6;"></i> Django</div>
+                        <div class="tech-pill"><i class="bi bi-filetype-py" style="color:#F59E0B;"></i> Python</div>
+                        <div class="tech-pill"><i class="bi bi-cpu" style="color:#8B5CF6;"></i> spaCy</div>
+                        <div class="tech-pill"><i class="bi bi-graph-up" style="color:#10B981;"></i> scikit-learn</div>
+                        <div class="tech-pill"><i class="bi bi-file-pdf" style="color:#EF4444;"></i> pdfplumber</div>
+                        <div class="tech-pill"><i class="bi bi-bootstrap" style="color:#7C3AED;"></i> Bootstrap 5</div>
+                        <div class="tech-pill"><i class="bi bi-bar-chart" style="color:#F59E0B;"></i> Chart.js</div>
+                        <div class="tech-pill"><i class="bi bi-database" style="color:#64748B;"></i> SQLite</div>
+                    </div>
+
+                    <div style="margin-top:24px; padding-top:20px; border-top:1px solid #E2E8F0;">
+                        <div style="font-size:13px; font-weight:700; color:#64748B;
+                                    text-transform:uppercase; letter-spacing:0.05em; margin-bottom:12px;">
+                            User Roles
+                        </div>
+                        <div style="display:flex; gap:10px;">
+                            <span style="background:#EFF6FF; color:#2563EB; border:1px solid #BFDBFE;
+                                         padding:5px 14px; border-radius:8px; font-size:13px; font-weight:600;">
+                                <i class="bi bi-person-fill me-1"></i>HR Manager
+                            </span>
+                            <span style="background:#F0FDF4; color:#059669; border:1px solid #A7F3D0;
+                                         padding:5px 14px; border-radius:8px; font-size:13px; font-weight:600;">
+                                <i class="bi bi-shield-fill me-1"></i>Super Admin
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Login Section ── -->
+<section class="login-section" id="login">
+    <div class="login-inner">
+        <div class="login-left">
+            <div class="section-label">Access the Platform</div>
+            <h2 class="section-title" style="margin-bottom:12px;">Sign in to<br>ResumeInsight AI</h2>
+            <p style="font-size:15px; color:#64748B; line-height:1.7; margin-bottom:28px;">
+                Already have an account? Sign in below to access your HR dashboard,
+                manage job listings, and screen candidates.
+            </p>
+            <div style="display:flex; flex-direction:column; gap:12px;">
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; background:#EFF6FF; border-radius:8px;
+                                display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="bi bi-check-lg" style="color:#2563EB;"></i>
+                    </div>
+                    <span style="font-size:14px; color:#475569;">Access your HR dashboard instantly</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; background:#EFF6FF; border-radius:8px;
+                                display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="bi bi-check-lg" style="color:#2563EB;"></i>
+                    </div>
+                    <span style="font-size:14px; color:#475569;">Manage jobs, resumes, and rankings</span>
+                </div>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div style="width:32px; height:32px; background:#EFF6FF; border-radius:8px;
+                                display:flex; align-items:center; justify-content:center; flex-shrink:0;">
+                        <i class="bi bi-check-lg" style="color:#2563EB;"></i>
+                    </div>
+                    <span style="font-size:14px; color:#475569;">Run NLP screening and skill gap analysis</span>
+                </div>
+            </div>
+        </div>
+        <div class="login-right">
+            <div class="login-card">
+                <h5 style="font-weight:800; font-size:20px; margin-bottom:4px;">Welcome back</h5>
+                <p style="font-size:13px; color:#64748B; margin-bottom:24px;">Sign in to your HR account</p>
+                <form method="POST" action="{% url 'login' %}">
+                    {% csrf_token %}
+                    <label class="login-label">Username</label>
+                    <input type="text" name="username" class="login-input" placeholder="Enter username" required>
+                    <label class="login-label">Password</label>
+                    <input type="password" name="password" class="login-input" placeholder="Enter password" required>
+                    <button type="submit" class="login-submit">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                    </button>
+                </form>
+                <div style="text-align:center; margin-top:20px; font-size:13px; color:#64748B;">
+                    Don't have an account?
+                    <a href="{% url 'signup' %}" style="color:#2563EB; font-weight:600; text-decoration:none;">
+                        Create one
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── CTA ── -->
+<section class="cta-section">
+    <div style="max-width:600px; margin:0 auto;">
+        <h2 class="cta-title">Ready to transform your hiring?</h2>
+        <p class="cta-desc">
+            Sign up now and start screening resumes with AI in minutes.
+        </p>
+        <a href="{% url 'signup' %}" class="cta-btn">
+            <i class="bi bi-rocket-takeoff-fill"></i>
+            Get Started — It's Free
+        </a>
+    </div>
+</section>
+
+<!-- ── Footer ── -->
+<footer class="land-footer">
+    <div class="footer-text">
+        © 2026 <strong style="color:#94A3B8;">ResumeInsight AI</strong> —
+        Final Year Project, B.Sc. CSIT
+    </div>
+    <div class="footer-text">
+        Built with <span>Django · spaCy · scikit-learn · Bootstrap 5</span>
+    </div>
+</footer>
+
+{% endblock %}

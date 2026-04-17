@@ -1,0 +1,206 @@
+<!-- templates/superadmin/user_list.html -->
+{% extends 'layout.html' %}
+{% block title %}HR Accounts — Super Admin{% endblock %}
+{% block page_title %}HR Manager Accounts{% endblock %}
+
+{% block page_content %}
+<div class="p-4">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <a href="{% url 'admin_dashboard' %}"
+               class="text-decoration-none text-secondary small">
+                <i class="bi bi-arrow-left me-1"></i>Back to Admin Dashboard
+            </a>
+            <h4 class="fw-bold mt-2 mb-0">HR Manager Accounts</h4>
+            <p class="text-secondary small mb-0">
+                Manage all HR Manager accounts on the system.
+            </p>
+        </div>
+        <a href="{% url 'admin_create_hr' %}" class="btn btn-primary">
+            <i class="bi bi-person-plus me-2"></i>Create HR Account
+        </a>
+    </div>
+
+    <!-- Search Bar -->
+    <div class="sa-card mb-4">
+        <div class="p-3">
+            <form method="GET" class="d-flex gap-2">
+                <input type="text" name="search" value="{{ search }}"
+                       placeholder="Search by username or email..."
+                       class="form-control" style="max-width:360px;">
+                <button type="submit" class="btn btn-primary">
+                    <i class="bi bi-search me-1"></i>Search
+                </button>
+                {% if search %}
+                <a href="{% url 'admin_user_list' %}"
+                   class="btn btn-outline-secondary">Clear</a>
+                {% endif %}
+            </form>
+        </div>
+    </div>
+
+    <!-- User Table -->
+    <div class="sa-card">
+        {% if users %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th class="ps-4">User</th>
+                        <th>Email</th>
+                        <th>Jobs Created</th>
+                        <th>Resumes</th>
+                        <th>Status</th>
+                        <th>Joined</th>
+                        <th class="text-end pe-4">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for u in users %}
+                    <tr>
+                        <td class="ps-4">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="sa-mini-avatar">
+                                    {{ u.first_name|first|default:u.username|first|upper }}
+                                </div>
+                                <div>
+                                    <div class="fw-semibold" style="font-size:13.5px;">
+                                        {{ u.get_full_name|default:u.username }}
+                                    </div>
+                                    <div class="text-secondary" style="font-size:11px;">
+                                        @{{ u.username }}
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="text-secondary" style="font-size:13px;">
+                            {{ u.email|default:"—" }}
+                        </td>
+                        <td>
+                            <span class="fw-semibold">
+                                {{ u.jobdescription_set.count }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="fw-semibold">
+                                {{ u.candidate_set.count }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if u.is_active %}
+                                <span class="sa-badge sa-badge-active">
+                                    <i class="bi bi-check-circle-fill me-1"></i>Active
+                                </span>
+                            {% else %}
+                                <span class="sa-badge sa-badge-inactive">
+                                    <i class="bi bi-x-circle-fill me-1"></i>Inactive
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td class="text-secondary" style="font-size:13px;">
+                            {{ u.date_joined|date:"M d, Y" }}
+                        </td>
+                        <td class="text-end pe-4">
+                            <div class="d-flex gap-2 justify-content-end">
+                                <!-- View -->
+                                <a href="{% url 'admin_user_detail' u.pk %}"
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye me-1"></i>View
+                                </a>
+
+                                <!-- Toggle Active/Inactive -->
+                                <form method="POST"
+                                      action="{% url 'admin_user_toggle' u.pk %}">
+                                    {% csrf_token %}
+                                    <button type="submit"
+                                            class="btn btn-sm
+                                            {% if u.is_active %}btn-outline-warning
+                                            {% else %}btn-outline-success{% endif %}">
+                                        {% if u.is_active %}
+                                            <i class="bi bi-pause-circle me-1"></i>Deactivate
+                                        {% else %}
+                                            <i class="bi bi-play-circle me-1"></i>Activate
+                                        {% endif %}
+                                    </button>
+                                </form>
+
+                                <!-- Delete -->
+                                <button type="button" class="btn btn-sm btn-outline-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteModal{{ u.pk }}">
+                                    <i class="bi bi-trash me-1"></i>Delete
+                                </button>
+                            </div>
+
+                            <!-- Delete Confirmation Modal -->
+                            <div class="modal fade" id="deleteModal{{ u.pk }}"
+                                 tabindex="-1">
+                                <div class="modal-dialog modal-dialog-centered">
+                                    <div class="modal-content border-0 rounded-3 shadow">
+                                        <div class="modal-body p-4 text-center">
+                                            <div style="width:56px; height:56px; background:#FEF2F2;
+                                                        border-radius:50%; display:flex; align-items:center;
+                                                        justify-content:center; margin:0 auto 16px;">
+                                                <i class="bi bi-trash-fill text-danger fs-4"></i>
+                                            </div>
+                                            <h5 class="fw-bold mb-2">Delete Account?</h5>
+                                            <p class="text-secondary small mb-4">
+                                                This will permanently delete
+                                                <strong>{{ u.username }}</strong>'s account
+                                                and all their jobs, resumes, and match results.
+                                                This cannot be undone.
+                                            </p>
+                                            <div class="d-flex gap-2 justify-content-center">
+                                                <button class="btn btn-outline-secondary"
+                                                        data-bs-dismiss="modal">Cancel</button>
+                                                <form method="POST"
+                                                      action="{% url 'admin_user_delete' u.pk %}">
+                                                    {% csrf_token %}
+                                                    <button type="submit"
+                                                            class="btn btn-danger">
+                                                        Yes, Delete Account
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="sa-empty py-5">
+            <i class="bi bi-people fs-1"></i>
+            <p class="mt-2">
+                {% if search %}
+                    No HR accounts found for "{{ search }}"
+                {% else %}
+                    No HR Manager accounts yet
+                {% endif %}
+            </p>
+            <a href="{% url 'admin_create_hr' %}"
+               class="btn btn-primary btn-sm">Create First Account</a>
+        </div>
+        {% endif %}
+    </div>
+
+</div>
+
+<style>
+    .sa-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; }
+    .sa-mini-avatar { width: 32px; height: 32px; background: #EFF6FF; color: #2563EB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+    .sa-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .sa-badge-active { background: #ECFDF5; color: #059669; }
+    .sa-badge-inactive { background: #FEF2F2; color: #DC2626; }
+    .sa-empty { text-align: center; color: #94A3B8; }
+    .sa-empty p { font-size: 13px; margin-bottom: 12px; }
+    body.dark-mode .sa-card { background: #1E293B !important; border-color: #334155 !important; }
+    body.dark-mode .modal-content { background: #1E293B !important; color: #E2E8F0 !important; }
+</style>
+{% endblock %}

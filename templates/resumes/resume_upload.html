@@ -1,0 +1,493 @@
+<!-- templates/resumes/resume_upload.html -->
+{% extends 'layout.html' %}
+{% block title %}Upload Resume — ResumeInsight AI{% endblock %}
+{% block page_title %}Upload Resumes{% endblock %}
+
+{% block page_content %}
+<div class="container py-4" style="max-width:760px;">
+
+    <!-- Header -->
+    <div class="mb-4">
+        <a href="{% url 'resume_list' %}" class="text-decoration-none text-muted small">
+            <i class="bi bi-arrow-left me-1"></i>Back to Resumes
+        </a>
+        <h3 class="fw-bold mt-2 mb-0">Upload Resumes</h3>
+        <p class="text-muted small">
+            Choose how you want to add a candidate resume.
+        </p>
+    </div>
+
+    <!-- Upload Card -->
+    <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+            {% csrf_token %}
+            <input type="hidden" name="input_type" id="inputType" value="pdf">
+
+            <!-- Job Selection -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">
+                    Job Position <span class="text-danger">*</span>
+                </label>
+                {{ form.job }}
+                <div class="form-text">All uploaded resumes will be linked to this job.</div>
+            </div>
+
+            <!-- ── Input Method Tabs ── -->
+            <div class="mb-4">
+                <label class="form-label fw-semibold">Resume Input Method</label>
+                <div class="d-flex gap-2 mb-3">
+                    <button type="button" class="method-tab active" id="tab-pdf"
+                            onclick="switchTab('pdf')">
+                        <i class="bi bi-file-earmark-pdf me-2"></i>PDF Upload
+                    </button>
+                    <button type="button" class="method-tab" id="tab-image"
+                            onclick="switchTab('image')">
+                        <i class="bi bi-image me-2"></i>Image / Scan
+                    </button>
+                    <button type="button" class="method-tab" id="tab-text"
+                            onclick="switchTab('text')">
+                        <i class="bi bi-textarea-t me-2"></i>Paste Text
+                    </button>
+                </div>
+
+                <!-- ── METHOD 1: PDF Upload ── -->
+                <div id="section-pdf">
+                    <div class="drop-zone" id="dropZone">
+                        <div class="drop-icon">
+                            <i class="bi bi-cloud-upload-fill"></i>
+                        </div>
+                        <div class="drop-text">
+                            <strong>Drag & drop PDF files here</strong>
+                            <span class="text-muted"> or </span>
+                            <label for="id_pdf_files" class="browse-link">Browse files</label>
+                        </div>
+                        <div class="drop-hint">
+                            Supports multiple PDFs — text-based or scanned • Max 5MB per file
+                        </div>
+                        <input type="file" name="pdf_files" id="id_pdf_files"
+                               accept=".pdf" multiple style="display:none;">
+                    </div>
+                    <div id="filePreview" style="display:none;" class="mt-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-semibold small" id="fileCount"></span>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="clearFiles()">
+                                <i class="bi bi-x me-1"></i>Clear All
+                            </button>
+                        </div>
+                        <div id="fileList" class="file-list"></div>
+                    </div>
+                </div>
+
+                <!-- ── METHOD 2: Image Upload ── -->
+                <div id="section-image" style="display:none;">
+                    <div class="drop-zone" id="imageDropZone">
+                        <div class="drop-icon" style="color:#059669;">
+                            <i class="bi bi-image-fill"></i>
+                        </div>
+                        <div class="drop-text">
+                            <strong>Upload scanned resume image</strong>
+                            <span class="text-muted"> or </span>
+                            <label for="id_image_files" class="browse-link">Browse files</label>
+                        </div>
+                        <div class="drop-hint">
+                            Supports JPG, PNG, BMP, TIFF • Max 10MB per file
+                        </div>
+                        <input type="file" name="image_files" id="id_image_files"
+                               accept=".jpg,.jpeg,.png,.bmp,.tiff,.tif"
+                               multiple style="display:none;">
+                    </div>
+                    <div id="imagePreview" style="display:none;" class="mt-3">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <span class="fw-semibold small" id="imageCount"></span>
+                            <button type="button" class="btn btn-sm btn-outline-danger"
+                                    onclick="clearImages()">
+                                <i class="bi bi-x me-1"></i>Clear All
+                            </button>
+                        </div>
+                        <div id="imageList" class="file-list"></div>
+                    </div>
+                    <div class="alert alert-info mt-3 rounded-3 py-2 small mb-0">
+                        <i class="bi bi-info-circle me-2"></i>
+                        Text will be extracted using OCR (Tesseract). Works best with
+                        clear, high-resolution scans. Processing may take a few seconds per image.
+                    </div>
+                </div>
+
+                <!-- ── METHOD 3: Manual Text Paste ── -->
+                <div id="section-text" style="display:none;">
+                    <label class="form-label fw-semibold small">
+                        Paste Resume Text
+                    </label>
+                    <textarea name="manual_text" id="manualText" rows="14"
+                              class="form-control"
+                              placeholder="Paste the full resume text here...
+
+Example:
+John Smith
+john.smith@email.com | +977-9841234567
+
+SUMMARY
+Software Engineer with 3 years of experience...
+
+SKILLS
+Python, Django, React, PostgreSQL, Git
+
+EDUCATION
+B.E. Computer Engineering, Tribhuvan University, 2020
+
+EXPERIENCE
+Software Developer | ABC Company | 2021 - Present"></textarea>
+                    <div class="d-flex justify-content-between mt-1">
+                        <div class="form-text">
+                            Paste any resume text — name, email, skills will be extracted automatically.
+                        </div>
+                        <span class="form-text" id="charCount">0 characters</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Progress Bar -->
+            <div id="uploadProgress" style="display:none;" class="mb-3">
+                <div class="d-flex justify-content-between small mb-1">
+                    <span class="fw-semibold">Processing...</span>
+                    <span id="progressText">0%</span>
+                </div>
+                <div class="progress" style="height:8px; border-radius:20px;">
+                    <div class="progress-bar progress-bar-striped progress-bar-animated
+                                bg-primary" id="progressBar"
+                         style="width:0%; border-radius:20px;"></div>
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <div class="d-flex gap-2 mt-3">
+                <button type="submit" class="btn btn-primary fw-semibold px-4"
+                        id="submitBtn" disabled>
+                    <i class="bi bi-cloud-upload me-2"></i>
+                    <span id="submitLabel">Upload & Parse</span>
+                </button>
+                <a href="{% url 'resume_list' %}"
+                   class="btn btn-outline-secondary px-4">Cancel</a>
+            </div>
+
+        </form>
+    </div>
+
+    <!-- Results Summary -->
+    {% if upload_summary %}
+    <div class="card border-0 shadow-sm rounded-3 p-4">
+        <h6 class="fw-bold mb-3">
+            <i class="bi bi-check-circle-fill text-success me-2"></i>
+            Upload Complete
+        </h6>
+        <div class="row g-3 mb-3">
+            <div class="col-6">
+                <div class="text-center p-3 rounded-3"
+                     style="background:#ECFDF5; border:2px solid #059669;">
+                    <div style="font-size:28px; font-weight:800; color:#059669;">
+                        {{ upload_summary.success }}
+                    </div>
+                    <div class="small text-muted">Successful</div>
+                </div>
+            </div>
+            <div class="col-6">
+                <div class="text-center p-3 rounded-3"
+                     style="background:#FEF2F2; border:2px solid #DC2626;">
+                    <div style="font-size:28px; font-weight:800; color:#DC2626;">
+                        {{ upload_summary.failed }}
+                    </div>
+                    <div class="small text-muted">Failed</div>
+                </div>
+            </div>
+        </div>
+        {% if upload_summary.errors %}
+        <div class="mt-2">
+            {% for error in upload_summary.errors %}
+            <div class="small text-danger">
+                <i class="bi bi-x-circle me-1"></i>{{ error }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+        <div class="mt-3 d-flex gap-2">
+            <a href="{% url 'resume_list' %}" class="btn btn-primary btn-sm">
+                <i class="bi bi-list me-1"></i>View All Resumes
+            </a>
+            <a href="{% url 'resume_upload' %}" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-cloud-upload me-1"></i>Upload More
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .method-tab {
+        padding: 8px 18px;
+        border-radius: 8px;
+        border: 1.5px solid #E2E8F0;
+        background: white;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        color: #64748B;
+        font-family: 'Plus Jakarta Sans', sans-serif;
+        transition: all 0.15s;
+    }
+    .method-tab:hover { border-color: #2563EB; color: #2563EB; }
+    .method-tab.active {
+        background: #2563EB; border-color: #2563EB;
+        color: white;
+    }
+    .drop-zone {
+        border: 2px dashed #BFDBFE; border-radius: 12px;
+        padding: 36px 24px; text-align: center;
+        background: #F8FAFC; cursor: pointer; transition: all 0.2s;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
+        border-color: #2563EB; background: #EFF6FF;
+    }
+    .drop-icon { font-size: 38px; color: #93C5FD; margin-bottom: 10px; }
+    .drop-text { font-size: 14px; margin-bottom: 6px; }
+    .drop-hint { font-size: 12px; color: #94A3B8; }
+    .browse-link {
+        color: #2563EB; font-weight: 600;
+        cursor: pointer; text-decoration: underline;
+    }
+    .file-list {
+        max-height: 200px; overflow-y: auto;
+        border: 1px solid #E2E8F0; border-radius: 8px;
+    }
+    .file-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 8px 12px; border-bottom: 1px solid #F1F5F9;
+        font-size: 13px;
+    }
+    .file-item:last-child { border-bottom: none; }
+    .file-icon { color: #DC2626; font-size: 16px; flex-shrink: 0; }
+    .file-name { flex: 1; font-weight: 500; }
+    .file-size { color: #94A3B8; font-size: 11px; }
+    .file-remove {
+        background: none; border: none; color: #94A3B8;
+        cursor: pointer; font-size: 14px; padding: 0 4px;
+    }
+    .file-remove:hover { color: #DC2626; }
+
+    body.dark-mode .method-tab { background:#1E293B !important; border-color:#334155 !important; color:#94A3B8 !important; }
+    body.dark-mode .method-tab.active { background:#2563EB !important; color:white !important; }
+    body.dark-mode .drop-zone { background:#1E293B !important; border-color:#334155 !important; }
+    body.dark-mode .drop-zone:hover { background:#1D4ED8 !important; border-color:#2563EB !important; }
+    body.dark-mode .file-list { border-color:#334155 !important; background:#1E293B !important; }
+    body.dark-mode .file-item { border-color:#334155 !important; }
+    body.dark-mode .file-name { color:#E2E8F0 !important; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+    // ── Tab Switching ──
+    function switchTab(method) {
+        ['pdf', 'image', 'text'].forEach(m => {
+            document.getElementById('section-' + m).style.display = 'none';
+            document.getElementById('tab-' + m).classList.remove('active');
+        });
+        document.getElementById('section-' + method).style.display = 'block';
+        document.getElementById('tab-' + method).classList.add('active');
+        document.getElementById('inputType').value = method;
+
+        // Reset submit button
+        const btn   = document.getElementById('submitBtn');
+        const label = document.getElementById('submitLabel');
+        btn.disabled = true;
+
+        if (method === 'pdf') {
+            label.textContent = 'Upload & Parse PDFs';
+        } else if (method === 'image') {
+            label.textContent = 'Upload & OCR Images';
+        } else {
+            label.textContent = 'Parse Resume Text';
+            // Enable immediately for text paste
+            checkTextArea();
+        }
+    }
+
+    // ── PDF Drag & Drop ──
+    const dropZone  = document.getElementById('dropZone');
+    const fileInput = document.getElementById('id_pdf_files');
+    let selectedFiles = [];
+
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault(); dropZone.classList.add('dragover');
+    });
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('dragover');
+    });
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault(); dropZone.classList.remove('dragover');
+        addFiles(Array.from(e.dataTransfer.files).filter(
+            f => f.type === 'application/pdf'
+        ));
+    });
+    dropZone.addEventListener('click', e => {
+        if (e.target.tagName !== 'LABEL') fileInput.click();
+    });
+    fileInput.addEventListener('change', () => {
+        addFiles(Array.from(fileInput.files));
+    });
+
+    function addFiles(newFiles) {
+        newFiles.forEach(f => {
+            if (!selectedFiles.find(x => x.name === f.name))
+                selectedFiles.push(f);
+        });
+        renderFileList();
+        syncInputFiles();
+    }
+    function renderFileList() {
+        const preview = document.getElementById('filePreview');
+        const list    = document.getElementById('fileList');
+        const count   = document.getElementById('fileCount');
+        const btn     = document.getElementById('submitBtn');
+
+        if (selectedFiles.length === 0) {
+            preview.style.display = 'none';
+            btn.disabled = true;
+            return;
+        }
+        preview.style.display = 'block';
+        btn.disabled = false;
+        count.textContent = `${selectedFiles.length} file(s) selected`;
+        list.innerHTML = '';
+        selectedFiles.forEach((f, i) => {
+            const size = (f.size / 1024).toFixed(0);
+            const item = document.createElement('div');
+            item.className = 'file-item';
+            item.innerHTML = `
+                <i class="bi bi-file-earmark-pdf-fill file-icon"></i>
+                <span class="file-name">${f.name}</span>
+                <span class="file-size">${size} KB</span>
+                <button type="button" class="file-remove"
+                        onclick="removeFile(${i})">
+                    <i class="bi bi-x"></i>
+                </button>`;
+            list.appendChild(item);
+        });
+    }
+    function removeFile(i) {
+        selectedFiles.splice(i, 1);
+        renderFileList(); syncInputFiles();
+    }
+    function clearFiles() {
+        selectedFiles = []; fileInput.value = '';
+        renderFileList();
+    }
+    function syncInputFiles() {
+        const dt = new DataTransfer();
+        selectedFiles.forEach(f => dt.items.add(f));
+        fileInput.files = dt.files;
+    }
+
+    // ── Image Upload ──
+    const imageDropZone  = document.getElementById('imageDropZone');
+    const imageFileInput = document.getElementById('id_image_files');
+    let selectedImages   = [];
+
+    imageDropZone.addEventListener('dragover', e => {
+        e.preventDefault(); imageDropZone.classList.add('dragover');
+    });
+    imageDropZone.addEventListener('dragleave', () => {
+        imageDropZone.classList.remove('dragover');
+    });
+    imageDropZone.addEventListener('drop', e => {
+        e.preventDefault(); imageDropZone.classList.remove('dragover');
+        addImages(Array.from(e.dataTransfer.files));
+    });
+    imageDropZone.addEventListener('click', e => {
+        if (e.target.tagName !== 'LABEL') imageFileInput.click();
+    });
+    imageFileInput.addEventListener('change', () => {
+        addImages(Array.from(imageFileInput.files));
+    });
+
+    function addImages(newFiles) {
+        newFiles.forEach(f => {
+            if (!selectedImages.find(x => x.name === f.name))
+                selectedImages.push(f);
+        });
+        renderImageList();
+        syncImageFiles();
+    }
+    function renderImageList() {
+        const preview = document.getElementById('imagePreview');
+        const list    = document.getElementById('imageList');
+        const count   = document.getElementById('imageCount');
+        const btn     = document.getElementById('submitBtn');
+
+        if (selectedImages.length === 0) {
+            preview.style.display = 'none';
+            btn.disabled = true;
+            return;
+        }
+        preview.style.display = 'block';
+        btn.disabled = false;
+        count.textContent = `${selectedImages.length} image(s) selected`;
+        list.innerHTML = '';
+        selectedImages.forEach((f, i) => {
+            const size = (f.size / 1024).toFixed(0);
+            const item = document.createElement('div');
+            item.className = 'file-item';
+            item.innerHTML = `
+                <i class="bi bi-image-fill file-icon" style="color:#059669;"></i>
+                <span class="file-name">${f.name}</span>
+                <span class="file-size">${size} KB</span>
+                <button type="button" class="file-remove"
+                        onclick="removeImage(${i})">
+                    <i class="bi bi-x"></i>
+                </button>`;
+            list.appendChild(item);
+        });
+    }
+    function removeImage(i) {
+        selectedImages.splice(i, 1);
+        renderImageList(); syncImageFiles();
+    }
+    function clearImages() {
+        selectedImages = []; imageFileInput.value = '';
+        renderImageList();
+    }
+    function syncImageFiles() {
+        const dt = new DataTransfer();
+        selectedImages.forEach(f => dt.items.add(f));
+        imageFileInput.files = dt.files;
+    }
+
+    // ── Manual Text ──
+    const textArea  = document.getElementById('manualText');
+    const charCount = document.getElementById('charCount');
+
+    function checkTextArea() {
+        const len = textArea.value.trim().length;
+        charCount.textContent = len + ' characters';
+        document.getElementById('submitBtn').disabled = len < 50;
+    }
+    textArea.addEventListener('input', checkTextArea);
+
+    // ── Progress bar on submit ──
+    document.getElementById('uploadForm').addEventListener('submit', function() {
+        document.getElementById('uploadProgress').style.display = 'block';
+        document.getElementById('submitBtn').disabled = true;
+        document.getElementById('submitBtn').innerHTML =
+            '<span class="spinner-border spinner-border-sm me-2"></span>Processing...';
+        let progress = 0;
+        setInterval(() => {
+            progress = Math.min(progress + Math.random() * 15, 90);
+            document.getElementById('progressBar').style.width = progress + '%';
+            document.getElementById('progressText').textContent =
+                Math.round(progress) + '%';
+        }, 400);
+    });
+</script>
+{% endblock %}

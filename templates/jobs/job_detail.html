@@ -1,0 +1,121 @@
+<!-- templates/jobs/job_detail.html -->
+{% extends 'layout.html' %}
+{% block title %}{{ job.title }} — ResumeInsight AI{% endblock %}
+
+{% block page_content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            <!-- Back -->
+            <a href="{% url 'job_list' %}" class="text-decoration-none text-muted small">
+                <i class="bi bi-arrow-left me-1"></i>Back to Jobs
+            </a>
+
+            <!-- Job Header -->
+            <div class="card border-0 shadow-sm rounded-3 p-4 mt-3 mb-4">
+                <div class="d-flex justify-content-between align-items-start">
+                    <div>
+                        <span class="badge
+                            {% if job.status == 'active' %}bg-success
+                            {% elif job.status == 'draft' %}bg-warning text-dark
+                            {% else %}bg-secondary{% endif %} mb-2">
+                            {{ job.get_status_display }}
+                        </span>
+                        <h3 class="fw-bold mb-1">{{ job.title }}</h3>
+                        <p class="text-muted mb-0">
+                            <i class="bi bi-building me-1"></i>{{ job.department|default:"No Department" }}
+                            &nbsp;|&nbsp;
+                            <i class="bi bi-calendar me-1"></i>{{ job.created_at|date:"M d, Y" }}
+                        </p>
+                    </div>
+                    <div class="d-flex gap-2">
+                        <a href="{% url 'job_edit' job.pk %}"
+                           class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-pencil me-1"></i>Edit
+                        </a>
+                        <!-- Delete Button triggers modal -->
+                        <button class="btn btn-outline-danger btn-sm"
+                                data-bs-toggle="modal" data-bs-target="#deleteModal">
+                            <i class="bi bi-trash me-1"></i>Delete
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Details Card -->
+            <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+
+                <!-- Experience & Education -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <p class="text-muted small mb-1">Experience Required</p>
+                        <p class="fw-semibold">
+                            {{ job.experience_required|default:"Not specified" }}
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <p class="text-muted small mb-1">Education Required</p>
+                        <p class="fw-semibold">
+                            {{ job.education_required|default:"Not specified" }}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Required Skills -->
+                <div class="mb-4">
+                    <p class="text-muted small mb-2">Required Skills</p>
+                    <div>
+                        {% for skill in skills_list %}
+                            <span class="badge bg-primary bg-opacity-10
+                                         text-primary border border-primary
+                                         me-1 mb-1 px-3 py-2">
+                                {{ skill }}
+                            </span>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- Description -->
+                <div>
+                    <p class="text-muted small mb-2">Job Description</p>
+                    <p class="lh-lg">{{ job.description }}</p>
+                </div>
+
+            </div>
+
+            <!-- Posted By -->
+            <p class="text-muted small text-end">
+                Posted by <strong>{{ job.created_by.get_full_name|default:job.created_by.username }}</strong>
+            </p>
+
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content rounded-3">
+            <div class="modal-header border-0">
+                <h5 class="modal-title fw-bold">Delete Job?</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-muted">
+                Are you sure you want to delete <strong>{{ job.title }}</strong>?
+                This action cannot be undone.
+            </div>
+            <div class="modal-footer border-0">
+                <button type="button" class="btn btn-outline-secondary"
+                        data-bs-dismiss="modal">Cancel</button>
+                <form method="POST" action="{% url 'job_delete' job.pk %}">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash me-1"></i>Yes, Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

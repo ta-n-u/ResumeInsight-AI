@@ -1,0 +1,90 @@
+<!-- templates/jobs/job_list.html -->
+{% extends 'layout.html' %}
+{% block title %}Job Listings — ResumeInsight AI{% endblock %}
+
+{% block page_content %}
+<div class="container py-5">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h3 class="fw-bold mb-0">Job Descriptions</h3>
+            <p class="text-muted small mb-0">Manage all active job postings</p>
+        </div>
+        <a href="{% url 'job_create' %}" class="btn btn-primary fw-semibold">
+            <i class="bi bi-plus-circle me-2"></i>Create New Job
+        </a>
+    </div>
+
+    <!-- Job Cards -->
+    {% if jobs %}
+        <div class="row g-4">
+            {% for job in jobs %}
+            <div class="col-md-6 col-lg-4">
+                <div class="card h-100 border-0 shadow-sm rounded-3">
+                    <div class="card-body p-4">
+
+                        <!-- Status Badge -->
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <span class="badge
+                                {% if job.status == 'active' %}bg-success
+                                {% elif job.status == 'draft' %}bg-warning text-dark
+                                {% else %}bg-secondary{% endif %}">
+                                {{ job.get_status_display }}
+                            </span>
+                            <small class="text-muted">{{ job.created_at|date:"M d, Y" }}</small>
+                        </div>
+
+                        <!-- Title & Department -->
+                        <h5 class="fw-bold mb-1">{{ job.title }}</h5>
+                        <p class="text-muted small mb-3">
+                            <i class="bi bi-building me-1"></i>{{ job.department|default:"No Department" }}
+                        </p>
+
+                        <!-- Skills Preview -->
+                        <div class="mb-3">
+                            {% for skill in job.get_skills_list|slice:":3" %}
+                                <span class="badge bg-light text-dark border me-1 mb-1">{{ skill }}</span>
+                            {% endfor %}
+                            {% if job.get_skills_list|length > 3 %}
+                                <span class="badge bg-light text-muted border">
+                                    +{{ job.get_skills_list|length|add:"-3" }} more
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-flex gap-2 mt-auto">
+                            <a href="{% url 'job_detail' job.pk %}"
+                               class="btn btn-sm btn-outline-primary w-100">
+                                <i class="bi bi-eye me-1"></i>View
+                            </a>
+                            <a href="{% url 'job_edit' job.pk %}"
+                               class="btn btn-sm btn-outline-secondary w-100">
+                                <i class="bi bi-pencil me-1"></i>Edit
+                            </a>
+                            <a href="{% url 'job_ranking' job.pk %}" class="btn btn-primary btn-sm">
+    <i class="bi bi-bar-chart me-1"></i> View Rankings
+</a>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+    {% else %}
+        <!-- Empty State -->
+        <div class="text-center py-5">
+            <i class="bi bi-briefcase fs-1 text-muted"></i>
+            <h5 class="mt-3 text-muted">No job descriptions yet</h5>
+            <p class="text-muted small">Start by creating your first job posting.</p>
+            <a href="{% url 'job_create' %}" class="btn btn-primary mt-2">
+                <i class="bi bi-plus-circle me-2"></i>Create First Job
+            </a>
+        </div>
+    {% endif %}
+
+</div>
+{% endblock %}

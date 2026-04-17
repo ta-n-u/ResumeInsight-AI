@@ -1,0 +1,292 @@
+<!-- templates/jobs/job_create.html -->
+{% extends 'layout.html' %}
+{% block title %}Create Job — ResumeInsight AI{% endblock %}
+
+{% block page_content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+
+            <!-- Header -->
+            <div class="mb-4">
+                <a href="{% url 'job_list' %}" class="text-decoration-none text-muted small">
+                    <i class="bi bi-arrow-left me-1"></i>Back to Jobs
+                </a>
+                <h3 class="fw-bold mt-2 mb-0">Create Job Description</h3>
+                <p class="text-muted small">Fill in the details for the new job posting</p>
+            </div>
+
+            <!-- Form Card -->
+            <div class="card border-0 shadow-sm rounded-3 p-4">
+                <form method="POST" id="jobForm">
+                    {% csrf_token %}
+
+                    <div class="row g-3">
+
+                        <!-- Job Title -->
+                        <div class="col-md-8">
+                            <label class="form-label fw-semibold">Job Title *</label>
+                            {{ form.title }}
+                        </div>
+
+                        <!-- Status -->
+                        <div class="col-md-4">
+                            <label class="form-label fw-semibold">Status</label>
+                            {{ form.status }}
+                        </div>
+
+                        <!-- Department -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Department</label>
+                            {{ form.department }}
+                        </div>
+
+                        <!-- Experience -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Experience Required</label>
+                            {{ form.experience_required }}
+                        </div>
+
+                        <!-- Education -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Education Required</label>
+                            {{ form.education_required }}
+                        </div>
+
+                        <!-- Required Skills -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">
+                                Required Skills
+                                <span class="text-muted fw-normal">(comma-separated)</span>
+                            </label>
+                            {{ form.required_skills }}
+                            <div class="form-text">
+                                Example: Python, Django, PostgreSQL, REST APIs, Git
+                            </div>
+                        </div>
+
+                        <!-- Description -->
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Job Description *</label>
+                            {{ form.description }}
+                        </div>
+
+                    </div>
+
+                    <!-- ── Matching Weight Configuration ── -->
+                    <div class="mt-4 p-4 rounded-3"
+                         style="background:#F8FAFC; border:1px solid #E2E8F0;">
+                        <h6 class="fw-bold mb-1">
+                            <i class="bi bi-sliders me-2 text-primary"></i>
+                            Matching Score Weights
+                        </h6>
+                        <p class="text-secondary small mb-3">
+                            Adjust how much each factor contributes to the final candidate score.
+                            All weights must add up to <strong>100%</strong>.
+                        </p>
+
+                        <!-- Skill Weight -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <label class="fw-semibold small">
+                                    <i class="bi bi-tags me-1 text-primary"></i>
+                                    Skill Match
+                                </label>
+                                <span class="fw-bold text-primary" id="skillLabel">50%</span>
+                            </div>
+                            <input type="range" class="form-range"
+                                   id="skillSlider" name="skill_weight"
+                                   min="0" max="100" step="5" value="50">
+                        </div>
+
+                        <!-- Semantic Weight -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <label class="fw-semibold small">
+                                    <i class="bi bi-chat-text me-1 text-success"></i>
+                                    Semantic Relevance
+                                </label>
+                                <span class="fw-bold text-success" id="semanticLabel">20%</span>
+                            </div>
+                            <input type="range" class="form-range"
+                                   id="semanticSlider" name="semantic_weight"
+                                   min="0" max="100" step="5" value="20">
+                        </div>
+
+                        <!-- Education Weight -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <label class="fw-semibold small">
+                                    <i class="bi bi-mortarboard me-1 text-warning"></i>
+                                    Education Match
+                                </label>
+                                <span class="fw-bold text-warning" id="educationLabel">20%</span>
+                            </div>
+                            <input type="range" class="form-range"
+                                   id="educationSlider" name="education_weight"
+                                   min="0" max="100" step="5" value="20">
+                        </div>
+
+                        <!-- Experience Weight -->
+                        <div class="mb-3">
+                            <div class="d-flex justify-content-between mb-1">
+                                <label class="fw-semibold small">
+                                    <i class="bi bi-briefcase me-1 text-danger"></i>
+                                    Experience Match
+                                </label>
+                                <span class="fw-bold text-danger" id="experienceLabel">10%</span>
+                            </div>
+                            <input type="range" class="form-range"
+                                   id="experienceSlider" name="experience_weight"
+                                   min="0" max="100" step="5" value="10">
+                        </div>
+
+                        <!-- Total Indicator -->
+                        <div class="d-flex align-items-center justify-content-between
+                                    p-3 rounded-3" id="totalBox"
+                             style="background:#ECFDF5; border:1px solid #6EE7B7;">
+                            <span class="fw-semibold small">Total Weight</span>
+                            <span class="fw-bold" id="totalLabel"
+                                  style="color:#059669; font-size:20px;">100%</span>
+                        </div>
+                        <p class="small mt-2 mb-0 text-danger fw-semibold"
+                           id="weightWarning" style="display:none;">
+                            ⚠️ Weights must add up to exactly 100% before saving.
+                        </p>
+                    </div>
+
+                    <!-- Buttons -->
+                    <div class="d-flex gap-2 mt-4">
+                        <button type="submit" class="btn btn-primary fw-semibold px-4"
+                                id="submitBtn">
+                            <i class="bi bi-check-circle me-2"></i>Save Job
+                        </button>
+                        <a href="{% url 'job_list' %}" class="btn btn-outline-secondary px-4">
+                            Cancel
+                        </a>
+                    </div>
+
+                </form>
+            </div>
+
+        </div>
+    </div>
+</div>
+<style>
+    /* ── Weight Slider Styling ── */
+    .form-range {
+        height: 6px;
+        padding: 0;
+        cursor: pointer;
+    }
+    .form-range::-webkit-slider-runnable-track {
+        height: 6px;
+        background: #E2E8F0;
+        border-radius: 10px;
+    }
+    .form-range::-webkit-slider-thumb {
+        width: 20px;
+        height: 20px;
+        margin-top: -7px;
+        background: #2563EB;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        cursor: pointer;
+        -webkit-appearance: none;
+    }
+    .form-range::-moz-range-track {
+        height: 6px;
+        background: #E2E8F0;
+        border-radius: 10px;
+    }
+    .form-range::-moz-range-thumb {
+        width: 20px;
+        height: 20px;
+        background: #2563EB;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+        cursor: pointer;
+    }
+
+    /* Dark mode support */
+    body.dark-mode .form-range::-webkit-slider-runnable-track { background: #334155; }
+    body.dark-mode .form-range::-moz-range-track { background: #334155; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script>
+(function() {
+    const skillSlider      = document.getElementById('skillSlider');
+    const semanticSlider   = document.getElementById('semanticSlider');
+    const educationSlider  = document.getElementById('educationSlider');
+    const experienceSlider = document.getElementById('experienceSlider');
+
+    const skillLabel      = document.getElementById('skillLabel');
+    const semanticLabel   = document.getElementById('semanticLabel');
+    const educationLabel  = document.getElementById('educationLabel');
+    const experienceLabel = document.getElementById('experienceLabel');
+
+    const totalBox     = document.getElementById('totalBox');
+    const totalLabel   = document.getElementById('totalLabel');
+    const weightWarn   = document.getElementById('weightWarning');
+    const submitBtn    = document.getElementById('submitBtn');
+
+    function updateWeights() {
+        const skill      = parseInt(skillSlider.value);
+        const semantic   = parseInt(semanticSlider.value);
+        const education  = parseInt(educationSlider.value);
+        const experience = parseInt(experienceSlider.value);
+        const total      = skill + semantic + education + experience;
+
+        // Update labels
+        skillLabel.textContent      = skill + '%';
+        semanticLabel.textContent   = semantic + '%';
+        educationLabel.textContent  = education + '%';
+        experienceLabel.textContent = experience + '%';
+
+        // Convert % to decimal for Django (store as 0.0–1.0)
+        skillSlider.name      = 'skill_weight';
+        semanticSlider.name   = 'semantic_weight';
+        educationSlider.name  = 'education_weight';
+        experienceSlider.name = 'experience_weight';
+
+        // Total indicator
+        totalLabel.textContent = total + '%';
+
+        if (total === 100) {
+            totalBox.style.background  = '#ECFDF5';
+            totalBox.style.borderColor = '#6EE7B7';
+            totalLabel.style.color     = '#059669';
+            weightWarn.style.display   = 'none';
+            submitBtn.disabled         = false;
+        } else {
+            totalBox.style.background  = '#FEF2F2';
+            totalBox.style.borderColor = '#FECACA';
+            totalLabel.style.color     = '#DC2626';
+            weightWarn.style.display   = 'block';
+            submitBtn.disabled         = true;
+        }
+    }
+
+    // Convert % sliders to 0.0–1.0 before form submits
+    document.getElementById('jobForm').addEventListener('submit', function() {
+        skillSlider.value      = parseInt(skillSlider.value) / 100;
+        semanticSlider.value   = parseInt(semanticSlider.value) / 100;
+        educationSlider.value  = parseInt(educationSlider.value) / 100;
+        experienceSlider.value = parseInt(experienceSlider.value) / 100;
+    });
+
+    skillSlider.addEventListener('input', updateWeights);
+    semanticSlider.addEventListener('input', updateWeights);
+    educationSlider.addEventListener('input', updateWeights);
+    experienceSlider.addEventListener('input', updateWeights);
+
+    // Run once on load
+    updateWeights();
+})();
+</script>
+{% endblock %}

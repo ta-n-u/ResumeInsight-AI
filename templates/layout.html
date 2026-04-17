@@ -1,0 +1,413 @@
+<!-- templates/layout.html -->
+{% extends 'base.html' %}
+
+{% block content %}
+
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
+
+    :root {
+        --primary: #2563EB;
+        --primary-dark: #1D4ED8;
+        --sidebar-width: 240px;
+        --topbar-height: 60px;
+        --text-primary: #0F172A;
+        --text-secondary: #64748B;
+        --border: #E2E8F0;
+        --bg: #F8FAFC;
+
+        /* LIGHT sidebar (default) */
+        --sidebar-bg:           #FFFFFF;
+        --sidebar-border:       #E2E8F0;
+        --sidebar-text:         #64748B;
+        --sidebar-hover:        #F1F5F9;
+        --sidebar-active-bg:    #EFF6FF;
+        --sidebar-active-color: #2563EB;
+        --nav-label-color:      #94A3B8;
+        --brand-text-color:     #0F172A;
+        --brand-sub-color:      #94A3B8;
+        --divider-color:        #F1F5F9;
+        --user-card-bg:         #F8FAFC;
+        --user-card-name:       #0F172A;
+    }
+
+    * { box-sizing: border-box; }
+    body { font-family: 'Plus Jakarta Sans', sans-serif; background: var(--bg); margin: 0; }
+
+    /* ── Sidebar ── */
+    .sidebar {
+        position: fixed; top: 0; left: 0; bottom: 0;
+        width: var(--sidebar-width);
+        background: var(--sidebar-bg);
+        border-right: 1px solid var(--sidebar-border);
+        display: flex; flex-direction: column;
+        z-index: 200; overflow-y: auto;
+    }
+    .sidebar-brand {
+        padding: 18px 16px;
+        border-bottom: 1px solid var(--divider-color);
+    }
+    .brand-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .brand-icon {
+        width: 36px; height: 36px; background: var(--primary);
+        border-radius: 10px; display: flex; align-items: center;
+        justify-content: center; color: white; font-size: 18px; flex-shrink: 0;
+    }
+    .brand-text { font-size: 15px; font-weight: 800; color: var(--brand-text-color); line-height: 1.1; }
+    .brand-sub  { font-size: 10px; color: var(--brand-sub-color); letter-spacing: 0.04em; }
+
+    .sidebar-nav { padding: 14px 10px; flex: 1; }
+    .nav-label {
+        font-size: 10px; font-weight: 700; letter-spacing: 0.1em;
+        text-transform: uppercase; color: var(--nav-label-color);
+        padding: 0 8px; margin-bottom: 6px; margin-top: 4px;
+    }
+    .nav-item {
+        display: flex; align-items: center; gap: 10px;
+        padding: 9px 12px; border-radius: 8px;
+        color: var(--sidebar-text); text-decoration: none;
+        font-size: 13.5px; font-weight: 500; margin-bottom: 2px;
+        transition: all 0.15s;
+    }
+    .nav-item:hover  { background: var(--sidebar-hover); color: var(--text-primary); }
+    .nav-item.active { background: var(--sidebar-active-bg); color: var(--sidebar-active-color); font-weight: 600; }
+    .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; flex-shrink: 0; }
+
+    /* Sidebar notification badge */
+    .sidebar-notif-badge {
+        margin-left: auto;
+        background: #DC2626;
+        color: white;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 1px 7px;
+        min-width: 18px;
+        text-align: center;
+        display: none; /* hidden by default, shown by JS */
+    }
+
+    .sidebar-divider { height: 1px; background: var(--divider-color); margin: 10px 10px; }
+
+    .sidebar-footer { padding: 12px 10px; border-top: 1px solid var(--divider-color); }
+    .user-card {
+        display: flex; align-items: center; gap: 10px;
+        padding: 10px 12px; background: var(--user-card-bg); border-radius: 10px;
+        border: 1px solid var(--divider-color);
+    }
+    .user-card-avatar {
+        width: 32px; height: 32px; background: var(--primary);
+        border-radius: 8px; display: flex; align-items: center;
+        justify-content: center; color: white; font-weight: 700; font-size: 12px; flex-shrink: 0;
+    }
+    .user-card-name { font-size: 12px; font-weight: 600; color: var(--user-card-name); line-height: 1.2; }
+    .user-card-role { font-size: 10px; color: var(--sidebar-text); }
+
+    /* ── Top Bar ── */
+    .topbar {
+        position: fixed; top: 0; left: var(--sidebar-width); right: 0;
+        height: var(--topbar-height); background: white;
+        border-bottom: 1px solid var(--border);
+        display: flex; align-items: center; padding: 0 24px; z-index: 100; gap: 12px;
+    }
+    .topbar-title { font-weight: 700; font-size: 15px; color: var(--text-primary); flex: 1; }
+
+    /* Shared style for bell + dark mode buttons */
+    .dark-toggle {
+        width: 36px; height: 36px; border-radius: 8px;
+        border: 1.5px solid var(--border); background: transparent;
+        cursor: pointer; display: flex; align-items: center;
+        justify-content: center; font-size: 16px; transition: all 0.2s;
+        color: var(--text-secondary);
+    }
+    .dark-toggle:hover { background: #F1F5F9; color: var(--text-primary); }
+
+    /* Bell wrapper — needs position:relative for badge to anchor to */
+    .bell-wrap {
+        position: relative;
+        width: 36px; height: 36px; border-radius: 8px;
+        border: 1.5px solid var(--border); background: transparent;
+        cursor: pointer; display: flex; align-items: center;
+        justify-content: center; font-size: 16px; transition: all 0.2s;
+        color: var(--text-secondary); text-decoration: none;
+        flex-shrink: 0;
+    }
+    .bell-wrap:hover { background: #F1F5F9; color: var(--text-primary); }
+
+    /* Red badge on the bell icon */
+    .notif-badge {
+        position: absolute;
+        top: -6px; right: -6px;
+        min-width: 18px; height: 18px;
+        background: #DC2626;
+        color: white;
+        border-radius: 20px;
+        font-size: 10px;
+        font-weight: 700;
+        display: flex;       /* shown/hidden via JS */
+        align-items: center;
+        justify-content: center;
+        padding: 0 4px;
+        border: 2px solid white;
+        line-height: 1;
+    }
+
+    .user-avatar {
+        width: 36px; height: 36px; background: var(--primary);
+        border-radius: 50%; display: flex; align-items: center;
+        justify-content: center; color: white; font-weight: 700; font-size: 13px;
+    }
+    .topbar-user-name { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+    .topbar-user-role { font-size: 11px; color: var(--text-secondary); }
+
+    .btn-logout {
+        background: transparent; border: 1.5px solid var(--border);
+        color: var(--text-secondary); padding: 6px 14px; border-radius: 8px;
+        font-size: 13px; font-weight: 500; font-family: 'Plus Jakarta Sans', sans-serif;
+        cursor: pointer; display: flex; align-items: center; gap: 6px;
+        text-decoration: none; transition: all 0.2s;
+    }
+    .btn-logout:hover { background: #FEF2F2; border-color: #DC2626; color: #DC2626; }
+
+    /* ── Main Content ── */
+    .main-wrapper {
+        margin-left: var(--sidebar-width); margin-top: var(--topbar-height);
+        min-height: calc(100vh - var(--topbar-height)); background: var(--bg);
+    }
+
+    /* ── Global Component Styles ── */
+    .card { background: white; border: 1px solid var(--border) !important; border-radius: 12px !important; box-shadow: 0 1px 3px rgba(0,0,0,0.04) !important; }
+    .table th { font-size: 11px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase; color: var(--text-secondary); background: #F8FAFC !important; border-bottom: 1px solid var(--border) !important; padding: 10px 16px !important; }
+    .table td { padding: 12px 16px !important; vertical-align: middle; border-bottom: 1px solid #F1F5F9 !important; font-size: 13.5px; }
+    .table tbody tr:hover { background: #F8FAFC !important; }
+    .btn { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; border-radius: 8px !important; }
+    .btn-primary { background: var(--primary) !important; border-color: var(--primary) !important; }
+    .btn-primary:hover { background: var(--primary-dark) !important; }
+    .btn-outline-primary { border-color: var(--primary) !important; color: var(--primary) !important; font-weight: 600; }
+    .btn-outline-primary:hover { background: var(--primary) !important; color: white !important; }
+    .form-control, .form-select { border-radius: 8px !important; border: 1.5px solid var(--border) !important; font-family: 'Plus Jakarta Sans', sans-serif; font-size: 14px; padding: 10px 14px !important; }
+    .form-control:focus, .form-select:focus { border-color: var(--primary) !important; box-shadow: 0 0 0 3px rgba(37,99,235,0.1) !important; }
+    .badge { font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 600; border-radius: 6px !important; }
+
+    /* ══════════════════════════════
+       DARK MODE — everything flips
+    ══════════════════════════════ */
+    body.dark-mode {
+        --bg: #0F172A;
+        --border: #334155;
+        --text-primary: #E2E8F0;
+        --text-secondary: #94A3B8;
+        --sidebar-bg:           #1E293B;
+        --sidebar-border:       #334155;
+        --sidebar-text:         #94A3B8;
+        --sidebar-hover:        #334155;
+        --sidebar-active-bg:    #2563EB;
+        --sidebar-active-color: #FFFFFF;
+        --nav-label-color:      #475569;
+        --brand-text-color:     #F1F5F9;
+        --brand-sub-color:      #475569;
+        --divider-color:        #334155;
+        --user-card-bg:         #0F172A;
+        --user-card-name:       #F1F5F9;
+    }
+
+    body.dark-mode .topbar          { background: #1E293B !important; border-color: #334155 !important; }
+    body.dark-mode .topbar-title    { color: #E2E8F0 !important; }
+    body.dark-mode .topbar-user-name{ color: #E2E8F0 !important; }
+    body.dark-mode .dark-toggle     { border-color: #334155 !important; color: #94A3B8; }
+    body.dark-mode .dark-toggle:hover { background: #334155 !important; color: white; }
+    body.dark-mode .bell-wrap       { border-color: #334155 !important; color: #94A3B8; }
+    body.dark-mode .bell-wrap:hover { background: #334155 !important; color: white; }
+    body.dark-mode .notif-badge     { border-color: #1E293B; }
+    body.dark-mode .btn-logout      { border-color: #334155 !important; color: #94A3B8 !important; }
+    body.dark-mode .btn-logout:hover{ background: rgba(220,38,38,0.1) !important; color: #F87171 !important; border-color: #F87171 !important; }
+    body.dark-mode .main-wrapper    { background: #0F172A !important; }
+    body.dark-mode .card            { background: #1E293B !important; border-color: #334155 !important; color: #E2E8F0 !important; }
+    body.dark-mode .form-control,
+    body.dark-mode .form-select     { background: #1E293B !important; border-color: #334155 !important; color: #E2E8F0 !important; }
+    body.dark-mode .table th        { background: #1E293B !important; color: #94A3B8 !important; border-color: #334155 !important; }
+    body.dark-mode .table td        { color: #CBD5E1 !important; border-color: #334155 !important; }
+    body.dark-mode .table tbody tr:hover { background: #334155 !important; }
+    body.dark-mode .text-secondary  { color: #94A3B8 !important; }
+    body.dark-mode .text-muted      { color: #64748B !important; }
+    body.dark-mode .nav-item:hover  { color: white !important; }
+</style>
+
+<!-- ── Sidebar ── -->
+<aside class="sidebar">
+    <div class="sidebar-brand">
+        <a href="{% url 'dashboard' %}" class="brand-logo">
+            <div class="brand-icon"><i class="bi bi-file-earmark-person-fill"></i></div>
+            <div>
+                <div class="brand-text">ResumeInsight</div>
+                <div class="brand-sub">AI Recruitment Platform</div>
+            </div>
+        </a>
+    </div>
+
+    <nav class="sidebar-nav">
+        <div class="nav-label">Main Menu</div>
+
+        <a href="{% url 'dashboard' %}"
+           class="nav-item {% if request.resolver_match.url_name == 'dashboard' %}active{% endif %}">
+            <i class="bi bi-speedometer2 nav-icon"></i> Dashboard
+        </a>
+
+        <a href="{% url 'job_list' %}"
+           class="nav-item {% if 'job' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-briefcase nav-icon"></i> Jobs
+        </a>
+
+        <a href="{% url 'resume_list' %}"
+           class="nav-item {% if 'resume' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-file-earmark-person nav-icon"></i> Resumes
+        </a>
+
+        <!-- Notifications — badge count injected by JS -->
+        <a href="{% url 'notifications' %}"
+           class="nav-item {% if request.resolver_match.url_name == 'notifications' %}active{% endif %}">
+            <i class="bi bi-bell nav-icon"></i>
+            Notifications
+            <span class="sidebar-notif-badge" id="sidebarNotifBadge"></span>
+        </a>
+        <a href="{% url 'skill_library' %}"
+   class="nav-item {% if request.resolver_match.url_name == 'skill_library' %}active{% endif %}">
+    <i class="bi bi-tags nav-icon"></i> Skill Library
+</a>
+        <a href="{% url 'analytics' %}"
+            class="nav-item {% if request.resolver_match.url_name == 'analytics' %}active{% endif %}">
+             <i class="bi bi-bar-chart-line nav-icon"></i> Analytics
+        </a>
+
+        <div class="sidebar-divider"></div>
+        <div class="nav-label">Actions</div>
+
+        <a href="{% url 'job_create' %}" class="nav-item">
+            <i class="bi bi-plus-circle nav-icon"></i> Create Job
+        </a>
+        <a href="{% url 'resume_upload' %}" class="nav-item">
+            <i class="bi bi-cloud-upload nav-icon"></i> Upload Resume
+        </a>
+
+        {% if request.user.is_super_admin %}
+        <div class="sidebar-divider"></div>
+        <div class="nav-label">Administration</div>
+        <a href="{% url 'admin_dashboard' %}" class="nav-item
+            {% if 'admin' in request.resolver_match.url_name %}active{% endif %}">
+            <i class="bi bi-shield-fill nav-icon" style="color:#EF4444;"></i>
+            Admin Panel
+        </a>
+        {% endif %}
+
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-card">
+            <div class="user-card-avatar">
+                {{ request.user.first_name|first|default:request.user.username|first|upper }}
+            </div>
+            <div>
+                <div class="user-card-name">
+                    {{ request.user.get_full_name|default:request.user.username }}
+                </div>
+                <div class="user-card-role">{{ request.user.get_role_display }}</div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- ── Top Bar ── -->
+<header class="topbar">
+    <div class="topbar-title">{% block page_title %}{% endblock %}</div>
+
+    <!-- Notification Bell — position:relative is on .bell-wrap so badge anchors correctly -->
+    <a href="{% url 'notifications' %}" class="bell-wrap" title="Notifications">
+        <i class="bi bi-bell-fill"></i>
+        <span class="notif-badge" id="notifBadge" style="display:none;"></span>
+    </a>
+
+    <!-- Dark Mode Toggle -->
+    <button class="dark-toggle" id="darkToggle" title="Toggle Dark Mode">
+        <i class="bi bi-moon-fill" id="darkIcon"></i>
+    </button>
+
+    <div class="d-flex align-items-center gap-2">
+        <div class="user-avatar">
+            {{ request.user.first_name|first|default:request.user.username|first|upper }}
+        </div>
+        <div>
+            <div class="topbar-user-name">
+                {{ request.user.get_full_name|default:request.user.username }}
+            </div>
+            <div class="topbar-user-role">{{ request.user.get_role_display }}</div>
+        </div>
+    </div>
+
+    <a href="{% url 'logout' %}" class="btn-logout">
+        <i class="bi bi-box-arrow-right"></i> Logout
+    </a>
+</header>
+
+<!-- ── Main Content ── -->
+<!-- ── Main Content ── -->
+<main class="main-wrapper">
+    {% block page_content %}{% endblock %}
+</main>
+
+<!-- ── Dark Mode + Notifications — outside block so runs on EVERY page ── -->
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        // ════════════════════════════════
+        // Dark Mode Toggle
+        // ════════════════════════════════
+        const darkToggle = document.getElementById('darkToggle');
+        const darkIcon   = document.getElementById('darkIcon');
+
+        if (localStorage.getItem('darkMode') === 'true') {
+            document.body.classList.add('dark-mode');
+            if (darkIcon) darkIcon.className = 'bi bi-sun-fill';
+        } else {
+            document.body.classList.remove('dark-mode');
+            if (darkIcon) darkIcon.className = 'bi bi-moon-fill';
+        }
+
+        if (darkToggle) {
+            darkToggle.addEventListener('click', () => {
+                document.body.classList.toggle('dark-mode');
+                const isDark = document.body.classList.contains('dark-mode');
+                if (darkIcon) darkIcon.className = isDark ? 'bi bi-sun-fill' : 'bi bi-moon-fill';
+                localStorage.setItem('darkMode', isDark);
+            });
+        }
+
+        // ════════════════════════════════
+        // Notification Badge
+        // ════════════════════════════════
+        function updateNotifBadge() {
+            fetch("{% url 'unread_count' %}")
+                .then(r => r.json())
+                .then(data => {
+                    const count        = data.count;
+                    const displayCount = count > 99 ? '99+' : String(count);
+                    const topBadge     = document.getElementById('notifBadge');
+                    const sideBadge    = document.getElementById('sidebarNotifBadge');
+                    if (topBadge) {
+                        topBadge.textContent   = count > 0 ? displayCount : '';
+                        topBadge.style.display = count > 0 ? 'flex' : 'none';
+                    }
+                    if (sideBadge) {
+                        sideBadge.textContent   = count > 0 ? displayCount : '';
+                        sideBadge.style.display = count > 0 ? 'inline-block' : 'none';
+                    }
+                })
+                .catch(() => {});
+        }
+
+        updateNotifBadge();
+        setInterval(updateNotifBadge, 30000);
+    });
+</script>
+
+{% block extra_js %}{% endblock %}
+{% endblock %}

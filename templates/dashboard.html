@@ -1,0 +1,522 @@
+<!-- templates/dashboard.html -->
+{% extends 'layout.html' %}
+{% block title %}Dashboard — ResumeInsight AI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block page_content %}
+<div class="p-4">
+
+    <!-- Welcome Banner -->
+    <div class="welcome-banner mb-4">
+        <div class="d-flex align-items-center justify-content-between flex-wrap gap-3">
+            <div>
+                <h4 class="fw-bold mb-1">Welcome back, {{ user.first_name|default:user.username }}! 👋</h4>
+                <p class="mb-0 opacity-75" style="font-size:14px;">Here is your recruitment overview for today.</p>
+            </div>
+            <div class="d-flex gap-2">
+                <a href="{% url 'job_create' %}" class="btn btn-light btn-sm fw-semibold">
+                    <i class="bi bi-plus-circle me-1"></i>New Job
+                </a>
+                <a href="{% url 'resume_upload' %}" class="btn btn-outline-light btn-sm fw-semibold">
+                    <i class="bi bi-upload me-1"></i>Upload CV
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#EFF6FF; color:#2563EB;">
+                    <i class="bi bi-briefcase-fill"></i>
+                </div>
+                <div class="stat-value" style="color:#2563EB;">{{ total_jobs }}</div>
+                <div class="stat-label">Total Jobs</div>
+                <div class="stat-sub">{{ active_jobs }} active</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#F0FDF4; color:#059669;">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-value" style="color:#059669;">{{ total_candidates }}</div>
+                <div class="stat-label">Candidates</div>
+                <div class="stat-sub">Total uploaded</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#FFFBEB; color:#D97706;">
+                    <i class="bi bi-file-earmark-text-fill"></i>
+                </div>
+                <div class="stat-value" style="color:#D97706;">{{ total_resumes }}</div>
+                <div class="stat-label">Resumes</div>
+                <div class="stat-sub">{{ processed_resumes }} processed</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-3">
+            <div class="stat-card">
+                <div class="stat-icon" style="background:#FDF4FF; color:#9333EA;">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </div>
+                <div class="stat-value" style="color:#9333EA;">{{ total_matches }}</div>
+                <div class="stat-label">Matches Run</div>
+                <div class="stat-sub">NLP analyses done</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Charts Row ── -->
+    <div class="row g-3 mb-4">
+
+        <!-- Chart 1: Match Score Distribution -->
+        <div class="col-md-4">
+            <div class="dash-card p-3 h-100">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="header-icon" style="background:#EFF6FF; color:#2563EB;">
+                        <i class="bi bi-bar-chart-fill"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0" style="font-size:13px;">Score Distribution</h6>
+                        <p class="text-secondary mb-0" style="font-size:11px;">Candidates by match range</p>
+                    </div>
+                </div>
+                <div style="height:185px; position:relative;">
+                    {% if total_matches > 0 %}
+                        <canvas id="scoreChart"></canvas>
+                    {% else %}
+                        <div class="chart-empty">
+                            <i class="bi bi-bar-chart"></i>
+                            <p>Run matching to see data</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 2: Resume Processing Doughnut -->
+        <div class="col-md-4">
+            <div class="dash-card p-3 h-100">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="header-icon" style="background:#F0FDF4; color:#059669;">
+                        <i class="bi bi-pie-chart-fill"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0" style="font-size:13px;">Processing Status</h6>
+                        <p class="text-secondary mb-0" style="font-size:11px;">Processed vs pending resumes</p>
+                    </div>
+                </div>
+                <div style="height:185px; position:relative;">
+                    {% if total_resumes > 0 %}
+                        <canvas id="resumeStatusChart"></canvas>
+                    {% else %}
+                        <div class="chart-empty">
+                            <i class="bi bi-pie-chart"></i>
+                            <p>Upload resumes to see data</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Chart 3: Top Skills Horizontal Bar -->
+        <div class="col-md-4">
+            <div class="dash-card p-3 h-100">
+                <div class="d-flex align-items-center gap-2 mb-3">
+                    <div class="header-icon" style="background:#FFFBEB; color:#D97706;">
+                        <i class="bi bi-tags-fill"></i>
+                    </div>
+                    <div>
+                        <h6 class="fw-bold mb-0" style="font-size:13px;">Top Skills in Demand</h6>
+                        <p class="text-secondary mb-0" style="font-size:11px;">Most required across jobs</p>
+                    </div>
+                </div>
+                <div style="height:185px; position:relative;">
+                    {% if top_skills %}
+                        <canvas id="skillsChart"></canvas>
+                    {% else %}
+                        <div class="chart-empty">
+                            <i class="bi bi-tags"></i>
+                            <p>Create jobs to see skills</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Top Ranked Candidates + Recent Jobs -->
+    <div class="row g-4 mb-4">
+
+        <div class="col-md-8">
+            <div class="dash-card h-100">
+                <div class="dash-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="header-icon" style="background:#FFFBEB; color:#D97706;">
+                            <i class="bi bi-trophy-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0">Top Ranked Candidates</h6>
+                            <p class="text-secondary mb-0" style="font-size:12px;">Highest scoring across all jobs</p>
+                        </div>
+                    </div>
+                    <a href="{% url 'job_list' %}" class="btn btn-sm btn-outline-primary">View Rankings</a>
+                </div>
+                {% if top_candidates %}
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>Rank</th>
+                                <th>Candidate</th>
+                                <th>Job</th>
+                                <th>Score</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for result in top_candidates %}
+                            <tr>
+                                <td>
+                                    {% if forloop.counter == 1 %}<span style="font-size:18px;">🥇</span>
+                                    {% elif forloop.counter == 2 %}<span style="font-size:18px;">🥈</span>
+                                    {% elif forloop.counter == 3 %}<span style="font-size:18px;">🥉</span>
+                                    {% else %}<span class="text-secondary fw-bold">#{{ forloop.counter }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="mini-avatar">{{ result.candidate.full_name|first|upper }}</div>
+                                        <span class="fw-semibold" style="font-size:13.5px;">{{ result.candidate.full_name }}</span>
+                                    </div>
+                                </td>
+                                <td class="text-secondary" style="font-size:13px;">{{ result.job.title }}</td>
+                                <td>
+                                    <span class="score-badge {% if result.match_percentage >= 70 %}score-high{% elif result.match_percentage >= 40 %}score-mid{% else %}score-low{% endif %}">
+                                        {{ result.match_percentage }}%
+                                    </span>
+                                </td>
+                                <td>
+                                    <a href="{% url 'skill_gap' result.pk %}" class="btn btn-sm btn-outline-primary">Gap Analysis</a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-people"></i>
+                    <p>No matches run yet</p>
+                    <a href="{% url 'resume_upload' %}" class="btn btn-primary btn-sm">Upload Resumes</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="dash-card h-100">
+                <div class="dash-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="header-icon" style="background:#EFF6FF; color:#2563EB;">
+                            <i class="bi bi-briefcase-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Recent Jobs</h6>
+                    </div>
+                    <a href="{% url 'job_list' %}" class="text-primary small fw-semibold">View all</a>
+                </div>
+                {% if jobs %}
+                    {% for job in jobs %}
+                    <div class="job-item">
+                        <div class="job-dot {% if job.status == 'active' %}job-dot-active{% else %}job-dot-closed{% endif %}"></div>
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold" style="font-size:13.5px;">{{ job.title }}</div>
+                            <div class="text-secondary" style="font-size:12px;">{{ job.department|default:"No department" }}</div>
+                        </div>
+                        <a href="{% url 'job_ranking' job.pk %}" class="btn btn-sm btn-outline-secondary" style="font-size:11px; padding:3px 8px;">Rankings</a>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="empty-state">
+                    <i class="bi bi-briefcase"></i>
+                    <p>No jobs yet</p>
+                    <a href="{% url 'job_create' %}" class="btn btn-primary btn-sm">Create Job</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Recent Resume Activity -->
+    <div class="dash-card mb-4">
+        <div class="dash-card-header">
+            <div class="d-flex align-items-center gap-2">
+                <div class="header-icon" style="background:#F0FDF4; color:#059669;">
+                    <i class="bi bi-clock-history"></i>
+                </div>
+                <div>
+                    <h6 class="fw-bold mb-0">Recent Resume Activity</h6>
+                    <p class="text-secondary mb-0" style="font-size:12px;">Latest uploaded and processed resumes</p>
+                </div>
+            </div>
+            <a href="{% url 'resume_list' %}" class="btn btn-sm btn-outline-primary">View All</a>
+        </div>
+        {% if recent_resumes %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Candidate</th>
+                        <th>Job Applied</th>
+                        <th>Blind ID</th>
+                        <th>Status</th>
+                        <th>Uploaded</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for resume in recent_resumes %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="mini-avatar">{{ resume.candidate.full_name|first|upper }}</div>
+                                <span class="fw-semibold" style="font-size:13.5px;">{{ resume.candidate.full_name }}</span>
+                            </div>
+                        </td>
+                        <td class="text-secondary" style="font-size:13px;">{{ resume.job.title }}</td>
+                        <td>
+                            <span class="badge bg-secondary bg-opacity-10 text-secondary border" style="font-size:11px;">
+                                {{ resume.candidate.blind_id }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if resume.is_processed %}
+                                <span class="status-badge status-processed"><i class="bi bi-check-circle-fill me-1"></i>Processed</span>
+                            {% else %}
+                                <span class="status-badge status-pending"><i class="bi bi-clock me-1"></i>Pending</span>
+                            {% endif %}
+                        </td>
+                        <td class="text-secondary" style="font-size:13px;">{{ resume.uploaded_at|date:"M d, Y" }}</td>
+                        <td>
+                            <a href="{% url 'resume_result' resume.pk %}" class="btn btn-sm btn-outline-primary">View</a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-file-earmark-person"></i>
+            <p>No resumes uploaded yet</p>
+            <a href="{% url 'resume_upload' %}" class="btn btn-primary btn-sm">Upload First Resume</a>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Quick Links -->
+    <h6 class="fw-bold text-secondary mb-3" style="font-size:12px; letter-spacing:0.05em; text-transform:uppercase;">Quick Links</h6>
+    <div class="row g-3 mb-2">
+        <div class="col-6 col-md-3">
+            <a href="{% url 'job_list' %}" class="quick-link-card">
+                <i class="bi bi-briefcase-fill" style="color:#2563EB; font-size:22px;"></i>
+                <span>View All Jobs</span>
+                <i class="bi bi-arrow-right ms-auto text-secondary"></i>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'resume_list' %}" class="quick-link-card">
+                <i class="bi bi-file-earmark-person-fill" style="color:#059669; font-size:22px;"></i>
+                <span>All Resumes</span>
+                <i class="bi bi-arrow-right ms-auto text-secondary"></i>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'job_create' %}" class="quick-link-card">
+                <i class="bi bi-plus-circle-fill" style="color:#D97706; font-size:22px;"></i>
+                <span>Create New Job</span>
+                <i class="bi bi-arrow-right ms-auto text-secondary"></i>
+            </a>
+        </div>
+        <div class="col-6 col-md-3">
+            <a href="{% url 'resume_upload' %}" class="quick-link-card">
+                <i class="bi bi-cloud-upload-fill" style="color:#9333EA; font-size:22px;"></i>
+                <span>Upload Resume</span>
+                <i class="bi bi-arrow-right ms-auto text-secondary"></i>
+            </a>
+        </div>
+    </div>
+
+</div>
+
+<style>
+    .welcome-banner { background: linear-gradient(135deg, #2563EB 0%, #1D4ED8 100%); border-radius: 14px; padding: 24px 28px; color: white; }
+    .stat-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; transition: box-shadow 0.2s; }
+    .stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    .stat-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 18px; margin-bottom: 12px; }
+    .stat-value { font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .stat-label { font-size: 13px; font-weight: 600; color: #374151; margin-bottom: 2px; }
+    .stat-sub { font-size: 11px; color: #94A3B8; }
+    .dash-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; }
+    .dash-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #F1F5F9; }
+    .header-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .mini-avatar { width: 30px; height: 30px; background: #EFF6FF; color: #2563EB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 12px; flex-shrink: 0; }
+    .score-badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+    .score-high { background:#ECFDF5; color:#059669; }
+    .score-mid  { background:#FFFBEB; color:#D97706; }
+    .score-low  { background:#FEF2F2; color:#DC2626; }
+    .status-badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+    .status-processed { background:#ECFDF5; color:#059669; }
+    .status-pending   { background:#FFFBEB; color:#D97706; }
+    .job-item { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-bottom: 1px solid #F8FAFC; }
+    .job-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .job-dot-active { background: #059669; }
+    .job-dot-closed { background: #94A3B8; }
+    .quick-link-card { display: flex; align-items: center; gap: 12px; background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 14px 16px; text-decoration: none; color: #0F172A; font-size: 13.5px; font-weight: 600; transition: all 0.2s; }
+    .quick-link-card:hover { border-color: #2563EB; box-shadow: 0 4px 12px rgba(37,99,235,0.1); color: #2563EB; }
+    .empty-state { text-align: center; padding: 40px 20px; color: #94A3B8; }
+    .empty-state i { font-size: 36px; display: block; margin-bottom: 8px; }
+    .empty-state p { font-size: 13px; margin-bottom: 12px; }
+    .chart-empty { display:flex; flex-direction:column; align-items:center; justify-content:center; height:100%; color:#94A3B8; }
+    .chart-empty i { font-size:28px; margin-bottom:6px; }
+    .chart-empty p { font-size:12px; margin:0; }
+
+    body.dark-mode .stat-card,
+    body.dark-mode .dash-card,
+    body.dark-mode .quick-link-card { background: #1E293B !important; border-color: #334155 !important; color: #E2E8F0 !important; }
+    body.dark-mode .dash-card-header,
+    body.dark-mode .job-item { border-color: #334155 !important; }
+    body.dark-mode .stat-label { color: #CBD5E1 !important; }
+    body.dark-mode .quick-link-card { color: #CBD5E1 !important; }
+    body.dark-mode .quick-link-card:hover { color: #60A5FA !important; border-color: #3B82F6 !important; }
+    body.dark-mode .mini-avatar { background: #1D4ED8 !important; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+    // ── Detect dark mode for chart colors ──
+    // ── Detect dark mode for chart colors ──
+    const chartDark      = document.body.classList.contains('dark-mode');
+    const textColor      = chartDark ? '#94A3B8' : '#64748B';
+    const gridColor      = chartDark ? '#334155' : '#F1F5F9';
+    const tooltipBg      = chartDark ? '#1E293B' : '#ffffff';
+    const tooltipText    = chartDark ? '#E2E8F0' : '#0F172A';
+
+    const tooltipStyle = {
+        backgroundColor : tooltipBg,
+        titleColor      : tooltipText,
+        bodyColor       : tooltipText,
+        borderColor     : chartDark ? '#334155' : '#E2E8F0',
+        borderWidth     : 1,
+        padding         : 10,
+        cornerRadius    : 8,
+    };
+
+    // ════════════════════════
+    // 1. Score Distribution
+    // ════════════════════════
+    {% if total_matches > 0 %}
+    new Chart(document.getElementById('scoreChart'), {
+        type: 'bar',
+        data: {
+            labels: ['0–25%', '26–50%', '51–75%', '76–100%'],
+            datasets: [{
+                label: 'Candidates',
+                data: [
+                    {{ score_0_25 }},
+                    {{ score_25_50 }},
+                    {{ score_50_75 }},
+                    {{ score_75_100 }}
+                ],
+                backgroundColor: [
+                    'rgba(220,38,38,0.8)',
+                    'rgba(217,119,6,0.8)',
+                    'rgba(37,99,235,0.8)',
+                    'rgba(5,150,105,0.8)',
+                ],
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: tooltipStyle },
+            scales: {
+                x: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: gridColor } },
+                y: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 }, stepSize: 1 }, grid: { color: gridColor } }
+            }
+        }
+    });
+    {% endif %}
+
+    // ════════════════════════
+    // 2. Resume Status Doughnut
+    // ════════════════════════
+    {% if total_resumes > 0 %}
+    new Chart(document.getElementById('resumeStatusChart'), {
+        type: 'doughnut',
+        data: {
+            labels: ['Processed', 'Pending'],
+            datasets: [{
+                data: [{{ processed_resumes }}, {{ pending_resumes }}],
+                backgroundColor: ['rgba(5,150,105,0.85)', 'rgba(217,119,6,0.85)'],
+                borderWidth: 0,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '68%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        color: textColor, font: { size: 11 },
+                        padding: 12, usePointStyle: true
+                    }
+                },
+                tooltip: tooltipStyle,
+            }
+        }
+    });
+    {% endif %}
+
+    // ════════════════════════
+    // 3. Top Skills Horizontal Bar
+    // ════════════════════════
+    {% if top_skills %}
+    new Chart(document.getElementById('skillsChart'), {
+        type: 'bar',
+        data: {
+            labels: [{% for skill in top_skills %}"{{ skill.name }}"{% if not forloop.last %},{% endif %}{% endfor %}],
+            datasets: [{
+                label: 'Jobs requiring',
+                data : [{% for skill in top_skills %}{{ skill.count }}{% if not forloop.last %},{% endif %}{% endfor %}],
+                backgroundColor: 'rgba(37,99,235,0.8)',
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            indexAxis: 'y',
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false }, tooltip: tooltipStyle },
+            scales: {
+                x: { beginAtZero: true, ticks: { color: textColor, font: { size: 11 }, stepSize: 1 }, grid: { color: gridColor } },
+                y: { ticks: { color: textColor, font: { size: 11 } }, grid: { color: 'transparent' } }
+            }
+        }
+    });
+    {% endif %}
+</script>
+{% endblock %}

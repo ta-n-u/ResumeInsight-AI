@@ -1,0 +1,159 @@
+<!-- templates/superadmin/user_detail.html -->
+{% extends 'layout.html' %}
+{% block title %}{{ hr_user.username }} — Super Admin{% endblock %}
+{% block page_title %}HR Account Detail{% endblock %}
+
+{% block page_content %}
+<div class="p-4">
+
+    <a href="{% url 'admin_user_list' %}"
+       class="text-decoration-none text-secondary small">
+        <i class="bi bi-arrow-left me-1"></i>Back to User List
+    </a>
+
+    <!-- User Profile Card -->
+    <div class="sa-card mt-3 mb-4 p-4">
+        <div class="d-flex align-items-center gap-4">
+            <div style="width:64px; height:64px; background:#2563EB; border-radius:16px;
+                        display:flex; align-items:center; justify-content:center;
+                        color:white; font-weight:800; font-size:24px; flex-shrink:0;">
+                {{ hr_user.first_name|first|default:hr_user.username|first|upper }}
+            </div>
+            <div class="flex-grow-1">
+                <h4 class="fw-bold mb-1">
+                    {{ hr_user.get_full_name|default:hr_user.username }}
+                </h4>
+                <div class="text-secondary" style="font-size:14px;">
+                    @{{ hr_user.username }} · {{ hr_user.email|default:"No email" }}
+                </div>
+                <div class="mt-2 d-flex gap-2">
+                    <span class="sa-badge
+                        {% if hr_user.is_active %}sa-badge-active{% else %}sa-badge-inactive{% endif %}">
+                        {% if hr_user.is_active %}Active{% else %}Inactive{% endif %}
+                    </span>
+                    <span class="sa-badge" style="background:#EFF6FF; color:#2563EB;">
+                        HR Manager
+                    </span>
+                </div>
+            </div>
+            <div class="text-secondary small">
+                Joined {{ hr_user.date_joined|date:"F d, Y" }}
+            </div>
+            <div class="d-flex gap-2">
+                <form method="POST"
+                      action="{% url 'admin_user_toggle' hr_user.pk %}">
+                    {% csrf_token %}
+                    <button type="submit"
+                            class="btn btn-sm
+                            {% if hr_user.is_active %}btn-outline-warning
+                            {% else %}btn-outline-success{% endif %}">
+                        {% if hr_user.is_active %}
+                            <i class="bi bi-pause-circle me-1"></i>Deactivate
+                        {% else %}
+                            <i class="bi bi-play-circle me-1"></i>Activate
+                        {% endif %}
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-4">
+            <div class="sa-stat-card text-center">
+                <div class="sa-stat-value" style="color:#2563EB;">
+                    {{ user_jobs.count }}
+                </div>
+                <div class="sa-stat-label">Jobs Created</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sa-stat-card text-center">
+                <div class="sa-stat-value" style="color:#059669;">
+                    {{ user_resumes.count }}
+                </div>
+                <div class="sa-stat-label">Resumes Uploaded</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="sa-stat-card text-center">
+                <div class="sa-stat-value" style="color:#9333EA;">
+                    {{ user_matches.count }}
+                </div>
+                <div class="sa-stat-label">Matches Run</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Jobs Table -->
+    <div class="sa-card mb-4">
+        <div class="sa-card-header">
+            <h6 class="fw-bold mb-0">
+                <i class="bi bi-briefcase me-2 text-primary"></i>
+                Jobs by this HR Manager
+            </h6>
+        </div>
+        {% if user_jobs %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in user_jobs %}
+                    <tr>
+                        <td class="fw-semibold">{{ job.title }}</td>
+                        <td class="text-secondary">{{ job.department|default:"—" }}</td>
+                        <td>
+                            <span class="sa-badge
+                                {% if job.status == 'active' %}sa-badge-active
+                                {% else %}sa-badge-inactive{% endif %}">
+                                {{ job.get_status_display }}
+                            </span>
+                        </td>
+                        <td class="text-secondary" style="font-size:13px;">
+                            {{ job.created_at|date:"M d, Y" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="sa-empty py-4">
+            <i class="bi bi-briefcase"></i>
+            <p>No jobs created by this user</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Back Button -->
+    <a href="{% url 'admin_user_list' %}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>Back to User List
+    </a>
+
+</div>
+
+<style>
+    .sa-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; }
+    .sa-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #F1F5F9; }
+    .sa-stat-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 20px; }
+    .sa-stat-value { font-size: 32px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .sa-stat-label { font-size: 13px; font-weight: 600; color: #374151; }
+    .sa-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .sa-badge-active { background: #ECFDF5; color: #059669; }
+    .sa-badge-inactive { background: #FEF2F2; color: #DC2626; }
+    .sa-empty { text-align: center; color: #94A3B8; }
+    .sa-empty i { font-size: 28px; display: block; margin-bottom: 8px; }
+    .sa-empty p { font-size: 13px; margin-bottom: 0; }
+    body.dark-mode .sa-card, body.dark-mode .sa-stat-card { background: #1E293B !important; border-color: #334155 !important; }
+    body.dark-mode .sa-card-header { border-color: #334155 !important; }
+    body.dark-mode .sa-stat-label { color: #CBD5E1 !important; }
+</style>
+{% endblock %}

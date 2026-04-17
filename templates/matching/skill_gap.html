@@ -1,0 +1,431 @@
+<!-- templates/matching/skill_gap.html -->
+{% extends 'layout.html' %}
+{% block title %}Skill Gap Analysis — {{ candidate.full_name }}{% endblock %}
+
+{% block page_content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+
+            <!-- Back -->
+            <a href="{% url 'job_ranking' job.pk %}"
+               class="text-decoration-none text-muted small">
+                <i class="bi bi-arrow-left me-1"></i>Back to Rankings
+            </a>
+
+            <!-- Header Card -->
+            <div class="card border-0 shadow-sm rounded-3 p-4 mt-3 mb-4">
+                <div class="d-flex align-items-center gap-3">
+                    <div class="bg-primary bg-opacity-10 rounded-circle
+                                d-flex align-items-center justify-content-center"
+                         style="width:56px; height:56px;">
+                        <i class="bi bi-bar-chart-fill text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <h4 class="fw-bold mb-0">Skill Gap Analysis</h4>
+                        <p class="text-muted small mb-0">
+                            <strong>{{ candidate.full_name }}</strong>
+                            applying for
+                            <strong>{{ job.title }}</strong>
+                        </p>
+                    </div>
+                    <div class="ms-auto text-center">
+                        <div class="display-6 fw-bold
+                            {% if match_result.match_percentage >= 70 %}text-success
+                            {% elif match_result.match_percentage >= 40 %}text-warning
+                            {% else %}text-danger{% endif %}">
+                            {{ match_result.match_percentage }}%
+                        </div>
+                        <div class="text-muted small">Match Score</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary Cards -->
+            <div class="row g-3 mb-4">
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+                        <div class="fs-2 fw-bold text-primary">
+                            {{ total_required }}
+                        </div>
+                        <div class="text-muted small">Skills Required</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+                        <div class="fs-2 fw-bold text-success">
+                            {{ matched_count }}
+                        </div>
+                        <div class="text-muted small">Skills Matched</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card border-0 shadow-sm rounded-3 p-3 text-center">
+                        <div class="fs-2 fw-bold text-danger">
+                            {{ missing_count }}
+                        </div>
+                        <div class="text-muted small">Skills Missing</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Score Breakdown Card -->
+            <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-sliders me-2 text-primary"></i>
+                    Score Breakdown
+                </h6>
+                <p class="text-muted small mb-3">
+                    How the final match score was calculated for this job.
+                </p>
+
+                <!-- Skill Score -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-semibold">
+                            <i class="bi bi-tags me-1 text-primary"></i>
+                            Skill Match
+                            <span class="text-muted fw-normal">
+                                (weight: {% widthratio job.skill_weight 1 100 %}%)
+                            </span>
+                        </span>
+                        <span class="small fw-bold text-primary">
+                            {{ matched_count }}/{{ total_required }} skills
+                        </span>
+                    </div>
+                    <div class="progress" style="height:10px; border-radius:20px;">
+                        <div class="progress-bar bg-primary"
+                             style="width:{% widthratio matched_count total_required 100 %}%;
+                                    border-radius:20px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Semantic Score -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-semibold">
+                            <i class="bi bi-chat-text me-1 text-success"></i>
+                            Semantic Relevance
+                            <span class="text-muted fw-normal">
+                                (weight: {% widthratio job.semantic_weight 1 100 %}%)
+                            </span>
+                        </span>
+                        <span class="small fw-bold text-success">
+                            {{ match_result.similarity_score|floatformat:2 }} / 1.0
+                        </span>
+                    </div>
+                    <div class="progress" style="height:10px; border-radius:20px;">
+                        <div class="progress-bar bg-success"
+                             style="width:{{ match_result.similarity_score|floatformat:0 }}%;
+                                    border-radius:20px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Education Score -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-semibold">
+                            <i class="bi bi-mortarboard me-1 text-warning"></i>
+                            Education Match
+                            <span class="text-muted fw-normal">
+                                (weight: {% widthratio job.education_weight 1 100 %}%)
+                            </span>
+                        </span>
+                        <span class="small fw-bold text-warning">
+                            {% if resume.extracted_education %}
+                                {{ resume.extracted_education|truncatechars:30 }}
+                            {% else %}
+                                Not extracted
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="progress" style="height:10px; border-radius:20px;">
+                        <div class="progress-bar bg-warning"
+                             style="width:{% if resume.extracted_education %}60{% else %}0{% endif %}%;
+                                    border-radius:20px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Experience Score -->
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="small fw-semibold">
+                            <i class="bi bi-briefcase me-1 text-danger"></i>
+                            Experience Match
+                            <span class="text-muted fw-normal">
+                                (weight: {% widthratio job.experience_weight 1 100 %}%)
+                            </span>
+                        </span>
+                        <span class="small fw-bold text-danger">
+                            {% if resume.extracted_experience %}
+                                {{ resume.extracted_experience|truncatechars:30 }}
+                            {% else %}
+                                Not extracted
+                            {% endif %}
+                        </span>
+                    </div>
+                    <div class="progress" style="height:10px; border-radius:20px;">
+                        <div class="progress-bar bg-danger"
+                             style="width:{% if resume.extracted_experience %}70{% else %}0{% endif %}%;
+                                    border-radius:20px;">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Final Score -->
+                <div class="d-flex align-items-center justify-content-between
+                            p-3 rounded-3 mt-2"
+                     style="background:#EFF6FF; border:1px solid #BFDBFE;">
+                    <span class="fw-bold">Final Hybrid Score</span>
+                    <span class="fw-bold fs-5
+                        {% if match_result.match_percentage >= 70 %}text-success
+                        {% elif match_result.match_percentage >= 40 %}text-warning
+                        {% else %}text-danger{% endif %}">
+                        {{ match_result.match_percentage }}%
+                    </span>
+                </div>
+            </div>
+
+            <!-- Skill Coverage Progress Bar -->
+            <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+                <h6 class="fw-bold mb-3">
+                    <i class="bi bi-bar-chart me-2 text-primary"></i>
+                    Skill Coverage
+                </h6>
+                {% if total_required > 0 %}
+                <div class="d-flex justify-content-between small text-muted mb-1">
+                    <span>0%</span>
+                    <span>{{ matched_count }} of {{ total_required }} skills matched</span>
+                    <span>100%</span>
+                </div>
+                <div class="progress mb-2" style="height: 20px;">
+                    <div class="progress-bar bg-success"
+                         role="progressbar"
+                         data-width="{{ matched_count }}"
+                         data-total="{{ total_required }}"
+                         aria-valuemin="0"
+                         aria-valuemax="100">
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+
+            <div class="row g-4 mb-4">
+
+                <!-- Matched Skills -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-3 p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-success">
+                            <i class="bi bi-check-circle-fill me-2"></i>
+                            Matched Skills ({{ matched_count }})
+                        </h6>
+                        {% if matched_skills %}
+                            {% for skill in matched_skills %}
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-check-circle-fill text-success small"></i>
+                                <span>{{ skill }}</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <p class="text-muted small">No skills matched.</p>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Missing Skills -->
+                <div class="col-md-6">
+                    <div class="card border-0 shadow-sm rounded-3 p-4 h-100">
+                        <h6 class="fw-bold mb-3 text-danger">
+                            <i class="bi bi-x-circle-fill me-2"></i>
+                            Missing Skills ({{ missing_count }})
+                        </h6>
+                        {% if missing_skills %}
+                            {% for skill in missing_skills %}
+                            <div class="d-flex align-items-center gap-2 mb-2">
+                                <i class="bi bi-x-circle-fill text-danger small"></i>
+                                <span>{{ skill }}</span>
+                                <span class="badge bg-danger bg-opacity-10
+                                             text-danger border border-danger
+                                             ms-auto small">Gap</span>
+                            </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-3">
+                                <i class="bi bi-trophy-fill text-warning fs-2"></i>
+                                <p class="text-success fw-semibold mt-2">
+                                    All required skills matched!
+                                </p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- ✅ RADAR CHART CARD -->
+            <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+                <h6 class="fw-bold mb-1">
+                    <i class="bi bi-radar me-2 text-primary"></i>
+                    Skill Match Radar Chart
+                </h6>
+                <p class="text-muted small mb-3">
+                    Visual comparison of required skills vs candidate skills.
+                    <strong>Blue</strong> = Required &nbsp;|&nbsp;
+                    <strong>Green</strong> = Candidate has it
+                </p>
+                <div class="d-flex justify-content-center">
+                    <canvas id="radarChart" width="450" height="450"></canvas>
+                </div>
+            </div>
+
+            <!-- HR Recommendation -->
+            <div class="card border-0 shadow-sm rounded-3 p-4 mb-4">
+                <h6 class="fw-bold mb-2">
+                    <i class="bi bi-lightbulb me-2 text-warning"></i>
+                    HR Recommendation
+                </h6>
+                {% if match_result.match_percentage >= 70 %}
+                    <div class="alert alert-success rounded-3 mb-0">
+                        <strong>Strong Candidate.</strong>
+                        This candidate meets most job requirements.
+                        Recommended for interview.
+                    </div>
+                {% elif match_result.match_percentage >= 40 %}
+                    <div class="alert alert-warning rounded-3 mb-0">
+                        <strong>Moderate Match.</strong>
+                        This candidate meets some requirements but has skill gaps.
+                        Consider for interview with assessment.
+                    </div>
+                {% else %}
+                    <div class="alert alert-danger rounded-3 mb-0">
+                        <strong>Weak Match.</strong>
+                        This candidate does not meet enough requirements
+                        for this role at this time.
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Back Button -->
+            <div class="mt-2">
+                <a href="{% url 'job_ranking' job.pk %}"
+                   class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-2"></i>Back to Rankings
+                </a>
+            </div>
+
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- Chart.js CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+    // ---------------------------------------------------------------
+    // Progress Bar Width (from data attributes)
+    // ---------------------------------------------------------------
+    document.querySelectorAll('.progress-bar[data-total]').forEach(bar => {
+        const matched = parseFloat(bar.getAttribute('data-width'));
+        const total   = parseFloat(bar.getAttribute('data-total'));
+        const percent = total > 0 ? Math.round((matched / total) * 100) : 0;
+        bar.style.width   = percent + '%';
+        bar.textContent   = percent + '%';
+    });
+
+    // ---------------------------------------------------------------
+    // Radar Chart Data from Django Template
+    // ---------------------------------------------------------------
+
+    // All required skills from the Job Description
+    const allSkills = [
+        {% for skill in job.get_skills_list %}
+            "{{ skill }}",
+        {% endfor %}
+    ];
+
+    // Which skills the candidate has (1 = has it, 0 = missing)
+    const candidateScores = [
+        {% for skill in job.get_skills_list %}
+            {% if skill in matched_skills %}1{% else %}0{% endif %},
+        {% endfor %}
+    ];
+
+    // Job requirement line (always 1 for all skills)
+    const jobRequirements = allSkills.map(() => 1);
+
+    // ---------------------------------------------------------------
+    // Build the Radar Chart
+    // ---------------------------------------------------------------
+    const ctx = document.getElementById('radarChart').getContext('2d');
+
+    new Chart(ctx, {
+        type: 'radar',
+        data: {
+            labels: allSkills,
+            datasets: [
+                {
+                    label: 'Job Requirements',
+                    data: jobRequirements,
+                    backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                    borderColor: 'rgba(13, 110, 253, 0.8)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(13, 110, 253, 1)',
+                    pointRadius: 4,
+                },
+                {
+                    label: 'Candidate Skills',
+                    data: candidateScores,
+                    backgroundColor: 'rgba(25, 135, 84, 0.15)',
+                    borderColor: 'rgba(25, 135, 84, 0.8)',
+                    borderWidth: 2,
+                    pointBackgroundColor: 'rgba(25, 135, 84, 1)',
+                    pointRadius: 4,
+                }
+            ]
+        },
+        options: {
+            responsive: false,
+            scales: {
+                r: {
+                    min: 0,
+                    max: 1,
+                    ticks: {
+                        stepSize: 1,
+                        display: false,     // hide 0/1 numbers
+                    },
+                    pointLabels: {
+                        font: { size: 12 },
+                        color: '#333'
+                    },
+                    grid: {
+                        color: 'rgba(0,0,0,0.08)'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        font: { size: 13 }
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const val = context.raw;
+                            return context.dataset.label + ': ' +
+                                   (val === 1 ? '✅ Present' : '❌ Missing');
+                        }
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,68 @@
+<!-- templates/auth/login.html -->
+{% extends 'base.html' %}
+
+{% block title %}Login — ResumeInsight AI{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center">
+    <div class="col-md-4 col-sm-10">
+
+        <!-- Logo / Brand -->
+        <div class="text-center mb-4">
+            <i class="bi bi-file-earmark-person-fill fs-1 brand-color"></i>
+            <h3 class="fw-bold mt-2">ResumeInsight <span class="brand-color">AI</span></h3>
+            <p class="text-muted">HR Recruitment Intelligence Platform</p>
+        </div>
+
+        <!-- Login Card -->
+        <div class="card auth-card p-4">
+            <h5 class="fw-bold mb-1">Welcome Back</h5>
+            <p class="text-muted small mb-4">Sign in to your HR account</p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- Username -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Password -->
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:6px;">
+    <label style="font-size:13px; font-weight:600; color:#374151;">
+        Password
+    </label>
+    <a href="{% url 'password_reset' %}"
+       style="font-size:12px; color:#2563EB; text-decoration:none; font-weight:500;">
+        Forgot password?
+    </a>
+</div>
+<input type="password" name="password" required
+       placeholder="Enter your password"
+       style="width:100%; padding:10px 14px; border-radius:8px;
+              border:1.5px solid #E2E8F0; font-size:14px;
+              font-family:'Plus Jakarta Sans',sans-serif;
+              margin-bottom:20px; outline:none; box-sizing:border-box;">
+
+                <!-- Submit -->
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+                        <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+                    </button>
+                </div>
+            </form>
+
+            <hr>
+            <p class="text-center text-muted small mb-0">
+                Don't have an account?
+                <a href="{% url 'signup' %}" class="text-primary fw-semibold">Create one</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

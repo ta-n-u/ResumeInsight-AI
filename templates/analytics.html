@@ -1,0 +1,535 @@
+<!-- templates/analytics.html -->
+{% extends 'layout.html' %}
+{% block title %}Analytics — ResumeInsight AI{% endblock %}
+{% block page_title %}Analytics{% endblock %}
+
+{% block page_content %}
+<div class="p-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Recruitment Analytics</h4>
+            <p class="text-secondary small mb-0">
+                Visual overview of your hiring pipeline and candidate data.
+            </p>
+        </div>
+        <a href="{% url 'dashboard' %}" class="btn btn-outline-primary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <!-- ── Summary Stat Cards ── -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="analytics-stat-card" style="border-left: 4px solid #2563EB;">
+                <div class="stat-icon" style="background:#EFF6FF; color:#2563EB;">
+                    <i class="bi bi-briefcase-fill"></i>
+                </div>
+                <div class="stat-value">{{ total_jobs }}</div>
+                <div class="stat-label">Total Jobs</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="analytics-stat-card" style="border-left: 4px solid #10B981;">
+                <div class="stat-icon" style="background:#ECFDF5; color:#10B981;">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="stat-value">{{ total_candidates }}</div>
+                <div class="stat-label">Total Candidates</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="analytics-stat-card" style="border-left: 4px solid #F59E0B;">
+                <div class="stat-icon" style="background:#FFFBEB; color:#F59E0B;">
+                    <i class="bi bi-file-earmark-person-fill"></i>
+                </div>
+                <div class="stat-value">{{ total_resumes }}</div>
+                <div class="stat-label">Resumes Uploaded</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="analytics-stat-card" style="border-left: 4px solid #8B5CF6;">
+                <div class="stat-icon" style="background:#F5F3FF; color:#8B5CF6;">
+                    <i class="bi bi-graph-up-arrow"></i>
+                </div>
+                <div class="stat-value">{{ avg_score }}%</div>
+                <div class="stat-label">Avg Match Score</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Row 1: Score Distribution + Processing Status ── -->
+    <div class="row g-3 mb-3">
+
+        <!-- Score Distribution Bar Chart -->
+        <div class="col-md-8">
+            <div class="analytics-card">
+                <div class="analytics-card-header">
+                    <div>
+                        <h6 class="fw-bold mb-0">Match Score Distribution</h6>
+                        <p class="text-secondary small mb-0">
+                            How candidates are spread across score ranges
+                        </p>
+                    </div>
+                    <i class="bi bi-bar-chart-fill text-primary" style="font-size:20px;"></i>
+                </div>
+                <div style="height:260px; position:relative;">
+                    <canvas id="scoreDistChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Processing Status Doughnut -->
+        <div class="col-md-4">
+            <div class="analytics-card h-100">
+                <div class="analytics-card-header">
+                    <div>
+                        <h6 class="fw-bold mb-0">Resume Status</h6>
+                        <p class="text-secondary small mb-0">
+                            Processed vs Pending
+                        </p>
+                    </div>
+                    <i class="bi bi-pie-chart-fill text-success" style="font-size:20px;"></i>
+                </div>
+                <div style="height:220px; position:relative; display:flex;
+                            align-items:center; justify-content:center;">
+                    <canvas id="processingChart"></canvas>
+                </div>
+                <!-- Legend -->
+                <div class="d-flex justify-content-center gap-4 mt-2">
+                    <div class="d-flex align-items-center gap-1">
+                        <span style="width:10px; height:10px; border-radius:50%;
+                                     background:#10B981; display:inline-block;"></span>
+                        <span class="small text-secondary">Processed</span>
+                    </div>
+                    <div class="d-flex align-items-center gap-1">
+                        <span style="width:10px; height:10px; border-radius:50%;
+                                     background:#E2E8F0; display:inline-block;"></span>
+                        <span class="small text-secondary">Unprocessed</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Row 2: Candidates per Job + Top Skills ── -->
+    <div class="row g-3 mb-3">
+
+        <!-- Candidates per Job -->
+        <div class="col-md-6">
+            <div class="analytics-card">
+                <div class="analytics-card-header">
+                    <div>
+                        <h6 class="fw-bold mb-0">Candidates per Job</h6>
+                        <p class="text-secondary small mb-0">
+                            Number of applicants for each position
+                        </p>
+                    </div>
+                    <i class="bi bi-people-fill text-warning" style="font-size:20px;"></i>
+                </div>
+                <div style="height:260px; position:relative;">
+                    <canvas id="candidatesPerJobChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Skills in Demand -->
+        <div class="col-md-6">
+            <div class="analytics-card">
+                <div class="analytics-card-header">
+                    <div>
+                        <h6 class="fw-bold mb-0">Top Skills in Demand</h6>
+                        <p class="text-secondary small mb-0">
+                            Most required skills across all job postings
+                        </p>
+                    </div>
+                    <i class="bi bi-lightning-charge-fill text-danger" style="font-size:20px;"></i>
+                </div>
+                <div style="height:260px; position:relative;">
+                    <canvas id="skillsChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- ── Row 3: Avg Score per Job ── -->
+    {% if avg_per_job %}
+    <div class="row g-3 mb-3">
+        <div class="col-12">
+            <div class="analytics-card">
+                <div class="analytics-card-header">
+                    <div>
+                        <h6 class="fw-bold mb-0">Average Match Score per Job</h6>
+                        <p class="text-secondary small mb-0">
+                            Which positions are attracting the best-fit candidates
+                        </p>
+                    </div>
+                    <i class="bi bi-graph-up-arrow text-primary" style="font-size:20px;"></i>
+                </div>
+                <div style="height:200px; position:relative;">
+                    <canvas id="avgScoreChart"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- ── Top 5 Candidates Table ── -->
+    <div class="analytics-card mb-3">
+        <div class="analytics-card-header mb-3">
+            <div>
+                <h6 class="fw-bold mb-0">🏆 Top Ranked Candidates</h6>
+                <p class="text-secondary small mb-0">
+                    Highest scoring candidates across all jobs
+                </p>
+            </div>
+        </div>
+        {% if top_candidates %}
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Rank</th>
+                        <th>Candidate</th>
+                        <th>Job</th>
+                        <th>Match Score</th>
+                        <th>Matched Skills</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for match in top_candidates %}
+                    <tr>
+                        <td>
+                            {% if forloop.counter == 1 %}🥇
+                            {% elif forloop.counter == 2 %}🥈
+                            {% elif forloop.counter == 3 %}🥉
+                            {% else %}#{{ forloop.counter }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div class="d-flex align-items-center gap-2">
+                                <div style="width:30px; height:30px; background:#EFF6FF;
+                                            color:#2563EB; border-radius:8px; display:flex;
+                                            align-items:center; justify-content:center;
+                                            font-weight:700; font-size:12px;">
+                                    {{ match.candidate.full_name|first|upper }}
+                                </div>
+                                <span class="fw-semibold" style="font-size:13px;">
+                                    {{ match.candidate.full_name }}
+                                </span>
+                            </div>
+                        </td>
+                        <td class="text-secondary small">{{ match.job.title }}</td>
+                        <td>
+                            <span class="fw-bold
+                                {% if match.match_percentage >= 70 %}text-success
+                                {% elif match.match_percentage >= 40 %}text-warning
+                                {% else %}text-danger{% endif %}">
+                                {{ match.match_percentage }}%
+                            </span>
+                        </td>
+                        <td style="font-size:12px;">
+                            {% for skill in match.get_matched_skills_list|slice:":3" %}
+                                <span style="background:#ECFDF5; color:#059669;
+                                             padding:2px 7px; border-radius:20px;
+                                             font-size:11px; margin:1px; display:inline-block;">
+                                    {{ skill }}
+                                </span>
+                            {% endfor %}
+                        </td>
+                        <td>
+                            <a href="{% url 'skill_gap' match.pk %}"
+                               class="btn btn-sm btn-outline-primary">
+                                Gap Analysis
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-secondary">
+            <i class="bi bi-people fs-2"></i>
+            <p class="mt-2 small">No match results yet. Upload and process resumes first.</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- ── Jobs Summary Table ── -->
+    <div class="analytics-card">
+        <div class="analytics-card-header mb-3">
+            <div>
+                <h6 class="fw-bold mb-0">Jobs Summary</h6>
+                <p class="text-secondary small mb-0">
+                    Overview of all your job postings
+                </p>
+            </div>
+        </div>
+        <div class="table-responsive">
+            <table class="table mb-0">
+                <thead>
+                    <tr>
+                        <th>Job Title</th>
+                        <th>Department</th>
+                        <th>Status</th>
+                        <th>Candidates</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for job in jobs_data %}
+                    <tr>
+                        <td class="fw-semibold">{{ job.title }}</td>
+                        <td class="text-secondary small">
+                            {{ job.department|default:"—" }}
+                        </td>
+                        <td>
+                            {% if job.status == 'active' %}
+                                <span class="badge"
+                                      style="background:#ECFDF5; color:#059669;">
+                                    Active
+                                </span>
+                            {% elif job.status == 'closed' %}
+                                <span class="badge"
+                                      style="background:#FEF2F2; color:#DC2626;">
+                                    Closed
+                                </span>
+                            {% else %}
+                                <span class="badge"
+                                      style="background:#F1F5F9; color:#64748B;">
+                                    Draft
+                                </span>
+                            {% endif %}
+                        </td>
+                        <td>{{ job.candidate_count }}</td>
+                        <td>
+                            <a href="{% url 'job_ranking' job.pk %}"
+                               class="btn btn-sm btn-outline-primary">
+                                View Rankings
+                            </a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center text-secondary py-3">
+                            No jobs created yet.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+
+<!-- ── Styles ── -->
+<style>
+    .analytics-stat-card {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+    .stat-icon {
+        width: 40px; height: 40px; border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 18px;
+    }
+    .stat-value {
+        font-size: 28px; font-weight: 800; color: #0F172A; line-height: 1;
+    }
+    .stat-label {
+        font-size: 13px; color: #64748B; font-weight: 500;
+    }
+    .analytics-card {
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        padding: 20px;
+    }
+    .analytics-card-header {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        margin-bottom: 16px;
+    }
+
+    /* Dark mode */
+    body.dark-mode .analytics-stat-card,
+    body.dark-mode .analytics-card {
+        background: #1E293B !important;
+        border-color: #334155 !important;
+    }
+    body.dark-mode .stat-value { color: #E2E8F0 !important; }
+    body.dark-mode .stat-label { color: #94A3B8 !important; }
+</style>
+{% endblock %}
+
+{% block extra_js %}
+{{ block.super }}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    // ── Parse data from Django ──
+    const scoreDistData    = {{ score_dist|safe }};
+    const processingData   = {{ processing_data|safe }};
+    const candPerJobData   = {{ candidates_per_job|safe }};
+    const skillsData       = {{ skills_chart|safe }};
+    const avgPerJobData    = {{ avg_per_job|safe }};
+
+    const isDark = document.body.classList.contains('dark-mode');
+    const gridColor    = isDark ? '#334155' : '#F1F5F9';
+    const tickColor    = isDark ? '#94A3B8' : '#64748B';
+    const legendColor  = isDark ? '#E2E8F0' : '#0F172A';
+
+    Chart.defaults.font.family = "'Plus Jakarta Sans', sans-serif";
+    Chart.defaults.font.size   = 12;
+
+    // ── Chart 1: Score Distribution ──
+    // ── Chart 1: Score Distribution ──
+    new Chart(document.getElementById('scoreDistChart'), {
+        type: 'bar',
+        data: {
+            labels: scoreDistData.labels,
+            datasets: [{
+                label: 'Candidates',
+                data: scoreDistData.data,
+                backgroundColor: ['#EF4444', '#F59E0B', '#3B82F6', '#10B981'],
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: {
+                    label: ctx => ` ${ctx.parsed.y} candidate(s)`
+                }}
+            },
+            scales: {
+                x: { grid: { color: gridColor }, ticks: { color: tickColor } },
+                y: {
+                    grid: { color: gridColor }, ticks: { color: tickColor, stepSize: 1 },
+                    beginAtZero: true,
+                }
+            }
+        }
+    });
+
+    // ── Chart 2: Processing Status ──
+    new Chart(document.getElementById('processingChart'), {
+        type: 'doughnut',
+        data: {
+            labels: processingData.labels,
+            datasets: [{
+                data: processingData.data,
+                backgroundColor: ['#10B981', '#E2E8F0'],
+                borderWidth: 0,
+                hoverOffset: 6,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: { display: false },
+                tooltip: { callbacks: {
+                    label: ctx => ` ${ctx.label}: ${ctx.parsed}`
+                }}
+            }
+        }
+    });
+
+    // ── Chart 3: Candidates per Job ──
+    new Chart(document.getElementById('candidatesPerJobChart'), {
+        type: 'bar',
+        data: {
+            labels: candPerJobData.labels,
+            datasets: [{
+                label: 'Candidates',
+                data: candPerJobData.data,
+                backgroundColor: '#3B82F6',
+                borderRadius: 8,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { display: false }, ticks: { color: tickColor } },
+                y: {
+                    grid: { color: gridColor }, ticks: { color: tickColor, stepSize: 1 },
+                    beginAtZero: true,
+                }
+            }
+        }
+    });
+
+    // ── Chart 4: Top Skills (Horizontal Bar) ──
+    new Chart(document.getElementById('skillsChart'), {
+        type: 'bar',
+        data: {
+            labels: skillsData.labels,
+            datasets: [{
+                label: 'Jobs requiring this skill',
+                data: skillsData.data,
+                backgroundColor: '#8B5CF6',
+                borderRadius: 6,
+                borderSkipped: false,
+            }]
+        },
+        options: {
+            indexAxis: 'y',   // horizontal bar
+            responsive: true, maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: {
+                    grid: { color: gridColor }, ticks: { color: tickColor, stepSize: 1 },
+                    beginAtZero: true,
+                },
+                y: { grid: { display: false }, ticks: { color: tickColor } }
+            }
+        }
+    });
+
+    // ── Chart 5: Avg Score per Job ──
+    const avgCtx = document.getElementById('avgScoreChart');
+    if (avgCtx && avgPerJobData.labels && avgPerJobData.labels.length > 0) {
+        new Chart(avgCtx, {
+            type: 'bar',
+            data: {
+                labels: avgPerJobData.labels,
+                datasets: [{
+                    label: 'Avg Match %',
+                    data: avgPerJobData.data,
+                    backgroundColor: '#F59E0B',
+                    borderRadius: 8,
+                    borderSkipped: false,
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { grid: { display: false }, ticks: { color: tickColor } },
+                    y: {
+                        grid: { color: gridColor }, ticks: { color: tickColor },
+                        min: 0, max: 100,
+                        beginAtZero: true,
+                    }
+                }
+            }
+        });
+    }
+</script>
+{% endblock %}

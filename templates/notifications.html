@@ -1,0 +1,150 @@
+<!-- templates/notifications.html -->
+{% extends 'layout.html' %}
+{% block title %}Notifications — ResumeInsight AI{% endblock %}
+{% block page_title %}Notifications{% endblock %}
+
+{% block page_content %}
+<div class="p-4" style="max-width: 800px;">
+
+    <!-- Header -->
+    <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+            <h4 class="fw-bold mb-1">Notifications</h4>
+            <p class="text-secondary small mb-0">
+                Your recent activity and system alerts.
+            </p>
+        </div>
+        {% if notifications %}
+        <form method="POST" action="{% url 'mark_all_read' %}">
+            {% csrf_token %}
+            <button type="submit" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-check2-all me-1"></i>Mark All as Read
+            </button>
+        </form>
+        {% endif %}
+    </div>
+
+    <!-- Notifications List -->
+    {% if notifications %}
+        {% for notif in notifications %}
+        <div class="notif-item {% if not notif.is_read %}notif-unread{% endif %}">
+            <div class="notif-icon-wrap">
+                {% if '✅' in notif.message %}
+                    <div class="notif-icon" style="background:#ECFDF5; color:#059669;">
+                        <i class="bi bi-check-circle-fill"></i>
+                    </div>
+                {% elif '🎯' in notif.message %}
+                    <div class="notif-icon" style="background:#EFF6FF; color:#2563EB;">
+                        <i class="bi bi-lightning-charge-fill"></i>
+                    </div>
+                {% elif '👋' in notif.message or '🎉' in notif.message %}
+                    <div class="notif-icon" style="background:#FDF4FF; color:#9333EA;">
+                        <i class="bi bi-person-check-fill"></i>
+                    </div>
+                {% elif '📧' in notif.message %}
+                    <div class="notif-icon" style="background:#FFFBEB; color:#D97706;">
+                        <i class="bi bi-envelope-fill"></i>
+                    </div>
+                {% else %}
+                    <div class="notif-icon" style="background:#F1F5F9; color:#64748B;">
+                        <i class="bi bi-bell-fill"></i>
+                    </div>
+                {% endif %}
+            </div>
+            <div class="notif-body">
+                <div class="notif-message">{{ notif.message }}</div>
+                <div class="notif-time">
+                    <i class="bi bi-clock me-1"></i>
+                    {{ notif.created_at|timesince }} ago
+                </div>
+            </div>
+            {% if not notif.is_read %}
+            <div class="notif-dot"></div>
+            {% endif %}
+            <form method="POST" action="{% url 'mark_read' notif.pk %}">
+                {% csrf_token %}
+                <button type="submit" class="notif-dismiss"
+                        title="Mark as read">
+                    <i class="bi bi-x"></i>
+                </button>
+            </form>
+        </div>
+        {% endfor %}
+    {% else %}
+        <div class="empty-notif">
+            <div class="empty-icon">
+                <i class="bi bi-bell-slash"></i>
+            </div>
+            <h6 class="fw-bold mt-3 mb-1">All caught up!</h6>
+            <p class="text-secondary small">
+                No notifications yet. They will appear here when you
+                upload resumes or run matching.
+            </p>
+        </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .notif-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 14px;
+        padding: 16px 20px;
+        background: white;
+        border: 1px solid #E2E8F0;
+        border-radius: 12px;
+        margin-bottom: 10px;
+        transition: box-shadow 0.2s;
+        position: relative;
+    }
+    .notif-item:hover { box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+    .notif-unread {
+        border-left: 3px solid #2563EB !important;
+        background: #FAFCFF !important;
+    }
+    .notif-icon {
+        width: 38px; height: 38px;
+        border-radius: 10px;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px; flex-shrink: 0;
+    }
+    .notif-body { flex: 1; }
+    .notif-message {
+        font-size: 14px; font-weight: 500;
+        color: #0F172A; line-height: 1.5; margin-bottom: 4px;
+    }
+    .notif-time {
+        font-size: 12px; color: #94A3B8;
+    }
+    .notif-dot {
+        width: 8px; height: 8px;
+        background: #2563EB; border-radius: 50%;
+        flex-shrink: 0; margin-top: 6px;
+    }
+    .notif-dismiss {
+        background: transparent; border: none;
+        color: #CBD5E1; font-size: 16px; cursor: pointer;
+        padding: 2px 6px; border-radius: 6px;
+        transition: all 0.15s; flex-shrink: 0;
+    }
+    .notif-dismiss:hover { background: #FEF2F2; color: #DC2626; }
+    .empty-notif {
+        text-align: center; padding: 60px 20px;
+        background: white; border: 1px solid #E2E8F0;
+        border-radius: 12px;
+    }
+    .empty-icon {
+        width: 64px; height: 64px;
+        background: #F1F5F9; border-radius: 50%;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 28px; color: #94A3B8; margin: 0 auto;
+    }
+
+    body.dark-mode .notif-item { background: #1E293B !important; border-color: #334155 !important; }
+    body.dark-mode .notif-unread { background: #1E2D45 !important; }
+    body.dark-mode .notif-message { color: #E2E8F0 !important; }
+    body.dark-mode .empty-notif { background: #1E293B !important; border-color: #334155 !important; }
+    body.dark-mode .empty-icon { background: #334155 !important; }
+</style>
+{% endblock %}

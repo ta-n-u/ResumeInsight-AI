@@ -1,0 +1,96 @@
+<!-- templates/auth/signup.html -->
+{% extends 'base.html' %}
+
+{% block title %}Sign Up — ResumeInsight AI{% endblock %}
+
+{% block content %}
+<div class="min-vh-100 d-flex align-items-center justify-content-center py-5">
+    <div class="col-md-5 col-sm-10">
+
+        <!-- Brand -->
+        <div class="text-center mb-4">
+            <i class="bi bi-file-earmark-person-fill fs-1 brand-color"></i>
+            <h3 class="fw-bold mt-2">ResumeInsight <span class="brand-color">AI</span></h3>
+            <p class="text-muted">Create your HR Manager account</p>
+        </div>
+
+        <!-- Signup Card -->
+        <div class="card auth-card p-4">
+            <h5 class="fw-bold mb-1">Create Account</h5>
+            <p class="text-muted small mb-4">Fill in the details below to get started</p>
+
+            <form method="POST">
+                {% csrf_token %}
+
+                <!-- Name Row -->
+                <div class="row mb-3">
+                    <div class="col">
+                        <label class="form-label fw-semibold">First Name</label>
+                        {{ form.first_name }}
+                        {% if form.first_name.errors %}
+                            <div class="text-danger small mt-1">{{ form.first_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                    <div class="col">
+                        <label class="form-label fw-semibold">Last Name</label>
+                        {{ form.last_name }}
+                        {% if form.last_name.errors %}
+                            <div class="text-danger small mt-1">{{ form.last_name.errors.0 }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Username -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Username</label>
+                    {{ form.username }}
+                    {% if form.username.errors %}
+                        <div class="text-danger small mt-1">{{ form.username.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Email Address</label>
+                    {{ form.email }}
+                    {% if form.email.errors %}
+                        <div class="text-danger small mt-1">{{ form.email.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Password -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Password</label>
+                    {{ form.password1 }}
+                    {% if form.password1.errors %}
+                        <div class="text-danger small mt-1">{{ form.password1.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Confirm Password</label>
+                    {{ form.password2 }}
+                    {% if form.password2.errors %}
+                        <div class="text-danger small mt-1">{{ form.password2.errors.0 }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Submit -->
+                <div class="d-grid mt-4">
+                    <button type="submit" class="btn btn-primary btn-lg fw-semibold">
+                        <i class="bi bi-person-plus-fill me-2"></i>Create Account
+                    </button>
+                </div>
+            </form>
+
+            <hr>
+            <p class="text-center text-muted small mb-0">
+                Already have an account?
+                <a href="{% url 'login' %}" class="text-primary fw-semibold">Sign in</a>
+            </p>
+        </div>
+
+    </div>
+</div>
+{% endblock %}

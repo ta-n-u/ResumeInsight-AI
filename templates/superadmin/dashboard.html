@@ -1,0 +1,249 @@
+<!-- templates/superadmin/dashboard.html -->
+{% extends 'layout.html' %}
+{% block title %}Super Admin — ResumeInsight AI{% endblock %}
+{% block page_title %}Super Admin Panel{% endblock %}
+
+{% block page_content %}
+<div class="p-4">
+
+    <!-- Header Banner -->
+    <div class="mb-4" style="background: linear-gradient(135deg, #0F172A 0%, #1E293B 100%);
+                              border-radius: 14px; padding: 24px 28px; color: white;">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+                    <span style="background:rgba(239,68,68,0.2); color:#F87171;
+                                 padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700;">
+                        <i class="bi bi-shield-fill me-1"></i>SUPER ADMIN
+                    </span>
+                </div>
+                <h4 class="fw-bold mb-1">System Administration</h4>
+                <p class="mb-0 opacity-75" style="font-size:14px;">
+                    Manage HR accounts and monitor system-wide activity.
+                </p>
+            </div>
+            <a href="{% url 'admin_create_hr' %}" class="btn btn-light fw-semibold">
+                <i class="bi bi-person-plus me-2"></i>Create HR Account
+            </a>
+        </div>
+    </div>
+
+    <!-- System Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-md-2">
+            <div class="sa-stat-card">
+                <div class="sa-stat-icon" style="background:#EFF6FF; color:#2563EB;">
+                    <i class="bi bi-people-fill"></i>
+                </div>
+                <div class="sa-stat-value" style="color:#2563EB;">{{ total_hr_users }}</div>
+                <div class="sa-stat-label">HR Managers</div>
+                <div class="sa-stat-sub">{{ active_hr_users }} active</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="sa-stat-card">
+                <div class="sa-stat-icon" style="background:#F0FDF4; color:#059669;">
+                    <i class="bi bi-briefcase-fill"></i>
+                </div>
+                <div class="sa-stat-value" style="color:#059669;">{{ total_jobs }}</div>
+                <div class="sa-stat-label">Total Jobs</div>
+                <div class="sa-stat-sub">System-wide</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="sa-stat-card">
+                <div class="sa-stat-icon" style="background:#FFFBEB; color:#D97706;">
+                    <i class="bi bi-file-earmark-text-fill"></i>
+                </div>
+                <div class="sa-stat-value" style="color:#D97706;">{{ total_resumes }}</div>
+                <div class="sa-stat-label">Resumes</div>
+                <div class="sa-stat-sub">All users</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="sa-stat-card">
+                <div class="sa-stat-icon" style="background:#FDF4FF; color:#9333EA;">
+                    <i class="bi bi-person-lines-fill"></i>
+                </div>
+                <div class="sa-stat-value" style="color:#9333EA;">{{ total_candidates }}</div>
+                <div class="sa-stat-label">Candidates</div>
+                <div class="sa-stat-sub">All users</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="sa-stat-card">
+                <div class="sa-stat-icon" style="background:#FFF0F0; color:#DC2626;">
+                    <i class="bi bi-lightning-charge-fill"></i>
+                </div>
+                <div class="sa-stat-value" style="color:#DC2626;">{{ total_matches }}</div>
+                <div class="sa-stat-label">Matches Run</div>
+                <div class="sa-stat-sub">All users</div>
+            </div>
+        </div>
+        <div class="col-6 col-md-2">
+            <div class="sa-stat-card" style="background: #0F172A; border-color: #1E293B;">
+                <div class="sa-stat-icon" style="background:rgba(255,255,255,0.1); color:white;">
+                    <i class="bi bi-shield-fill"></i>
+                </div>
+                <div class="sa-stat-value" style="color:white;">1</div>
+                <div class="sa-stat-label" style="color:#94A3B8;">Super Admins</div>
+                <div class="sa-stat-sub" style="color:#475569;">You</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+
+        <!-- Recent HR Users -->
+        <div class="col-md-7">
+            <div class="sa-card h-100">
+                <div class="sa-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="sa-header-icon" style="background:#EFF6FF; color:#2563EB;">
+                            <i class="bi bi-people-fill"></i>
+                        </div>
+                        <div>
+                            <h6 class="fw-bold mb-0">Recent HR Accounts</h6>
+                            <p class="text-secondary mb-0" style="font-size:12px;">
+                                Latest registered HR managers
+                            </p>
+                        </div>
+                    </div>
+                    <a href="{% url 'admin_user_list' %}"
+                       class="btn btn-sm btn-outline-primary">
+                        View All
+                    </a>
+                </div>
+                {% if recent_users %}
+                <div class="table-responsive">
+                    <table class="table mb-0">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Email</th>
+                                <th>Status</th>
+                                <th>Joined</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for u in recent_users %}
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div class="sa-mini-avatar">
+                                            {{ u.first_name|first|default:u.username|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold" style="font-size:13.5px;">
+                                                {{ u.get_full_name|default:u.username }}
+                                            </div>
+                                            <div class="text-secondary" style="font-size:11px;">
+                                                @{{ u.username }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-secondary" style="font-size:13px;">
+                                    {{ u.email|default:"—" }}
+                                </td>
+                                <td>
+                                    {% if u.is_active %}
+                                        <span class="sa-badge sa-badge-active">Active</span>
+                                    {% else %}
+                                        <span class="sa-badge sa-badge-inactive">Inactive</span>
+                                    {% endif %}
+                                </td>
+                                <td class="text-secondary" style="font-size:13px;">
+                                    {{ u.date_joined|date:"M d, Y" }}
+                                </td>
+                                <td>
+                                    <a href="{% url 'admin_user_detail' u.pk %}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="sa-empty">
+                    <i class="bi bi-people"></i>
+                    <p>No HR managers registered yet</p>
+                    <a href="{% url 'admin_create_hr' %}"
+                       class="btn btn-primary btn-sm">Create First Account</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- Recent Jobs System-wide -->
+        <div class="col-md-5">
+            <div class="sa-card h-100">
+                <div class="sa-card-header">
+                    <div class="d-flex align-items-center gap-2">
+                        <div class="sa-header-icon" style="background:#F0FDF4; color:#059669;">
+                            <i class="bi bi-briefcase-fill"></i>
+                        </div>
+                        <h6 class="fw-bold mb-0">Recent Jobs (All Users)</h6>
+                    </div>
+                </div>
+                {% if recent_jobs %}
+                    {% for job in recent_jobs %}
+                    <div class="sa-job-item">
+                        <div class="flex-grow-1">
+                            <div class="fw-semibold" style="font-size:13.5px;">
+                                {{ job.title }}
+                            </div>
+                            <div class="text-secondary" style="font-size:12px;">
+                                By {{ job.created_by.username }} ·
+                                {{ job.department|default:"No dept" }}
+                            </div>
+                        </div>
+                        <span class="sa-badge
+                            {% if job.status == 'active' %}sa-badge-active
+                            {% else %}sa-badge-inactive{% endif %}">
+                            {{ job.get_status_display }}
+                        </span>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                <div class="sa-empty">
+                    <i class="bi bi-briefcase"></i>
+                    <p>No jobs created yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .sa-stat-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; padding: 18px; transition: box-shadow 0.2s; }
+    .sa-stat-card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+    .sa-stat-icon { width: 38px; height: 38px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 17px; margin-bottom: 10px; }
+    .sa-stat-value { font-size: 28px; font-weight: 800; line-height: 1; margin-bottom: 4px; }
+    .sa-stat-label { font-size: 12px; font-weight: 600; color: #374151; margin-bottom: 2px; }
+    .sa-stat-sub { font-size: 11px; color: #94A3B8; }
+    .sa-card { background: white; border: 1px solid #E2E8F0; border-radius: 12px; overflow: hidden; }
+    .sa-card-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #F1F5F9; }
+    .sa-header-icon { width: 34px; height: 34px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 15px; flex-shrink: 0; }
+    .sa-mini-avatar { width: 32px; height: 32px; background: #EFF6FF; color: #2563EB; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; flex-shrink: 0; }
+    .sa-badge { padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .sa-badge-active { background: #ECFDF5; color: #059669; }
+    .sa-badge-inactive { background: #FEF2F2; color: #DC2626; }
+    .sa-job-item { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-bottom: 1px solid #F8FAFC; }
+    .sa-empty { text-align: center; padding: 40px 20px; color: #94A3B8; }
+    .sa-empty i { font-size: 32px; display: block; margin-bottom: 8px; }
+    .sa-empty p { font-size: 13px; margin-bottom: 12px; }
+
+    body.dark-mode .sa-stat-card,
+    body.dark-mode .sa-card { background: #1E293B !important; border-color: #334155 !important; }
+    body.dark-mode .sa-card-header,
+    body.dark-mode .sa-job-item { border-color: #334155 !important; }
+    body.dark-mode .sa-stat-label { color: #CBD5E1 !important; }
+</style>
+{% endblock %}

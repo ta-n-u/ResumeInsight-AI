@@ -1,0 +1,361 @@
+<!-- templates/matching/job_ranking.html -->
+{% extends 'layout.html' %}
+{% block title %}Candidate Rankings — {{ job.title }}{% endblock %}
+
+{% block page_content %}
+<div class="container py-4">
+
+    <!-- Header -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <a href="{% url 'job_list' %}" class="text-decoration-none text-muted small">
+                <i class="bi bi-arrow-left me-1"></i>Back to Jobs
+            </a>
+            <h3 class="fw-bold mt-2 mb-0">Candidate Rankings</h3>
+            <p class="text-muted small mb-0">
+                Job: <strong>{{ job.title }}</strong> —
+                {{ results.count }} candidate{{ results.count|pluralize }} ranked
+            </p>
+        </div>
+        <a href="{% url 'export_pdf_report' job.pk %}"
+       class="btn btn-outline-secondary">
+        <i class="bi bi-file-earmark-pdf me-2"></i>
+        Export PDF Report
+    </a>
+        <a href="{% url 'resume_upload' %}" class="btn btn-primary">
+            <i class="bi bi-cloud-upload me-2"></i>Upload More Resumes
+        </a>
+    </div>
+
+    <!-- Blind Mode Toggle -->
+    <div class="card border-0 shadow-sm rounded-3 p-3 mb-4">
+        <div class="d-flex align-items-center justify-content-between">
+            <div>
+                <h6 class="fw-bold mb-0">
+                    <i class="bi bi-eye-slash me-2 text-secondary"></i>
+                    Blind Screening Mode
+                </h6>
+                <p class="text-muted small mb-0">
+                    Hide candidate personal info for unbiased review
+                </p>
+            </div>
+            <div class="form-check form-switch mb-0">
+                <input class="form-check-input" type="checkbox"
+                       id="blindModeToggle" style="width:48px; height:24px;">
+                <label class="form-check-label fw-semibold ms-2"
+                       for="blindModeToggle" id="blindModeLabel">Off</label>
+            </div>
+        </div>
+    </div>
+
+    {% if results %}
+
+    <!-- Single Form — action set dynamically by JS -->
+    <form method="POST" id="candidateForm">
+        {% csrf_token %}
+
+        <!-- Action Bar -->
+        <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+            <div class="d-flex align-items-center gap-2">
+                <input type="checkbox" id="selectAll" class="form-check-input mt-0"
+                       style="width:16px; height:16px; cursor:pointer;">
+                <label for="selectAll" class="text-secondary small mb-0 fw-semibold">
+                    Select All Candidates
+                </label>
+                <span class="text-muted small ms-2" id="selectedCount">
+                    (0 selected)
+                </span>
+            </div>
+
+            <!-- Two Action Buttons -->
+            <div class="d-flex gap-2">
+                <button type="button"
+                        class="btn btn-success"
+                        id="sendSelectionBtn" disabled
+                        onclick="submitForm(
+                            '{% url 'send_selection_email' job.pk %}',
+                            'Send shortlisting email to selected candidates?'
+                        )">
+                    <i class="bi bi-envelope-check me-2"></i>
+                    Send Selection Email
+                </button>
+
+                <button type="button"
+                        class="btn btn-outline-danger"
+                        id="sendRejectionBtn" disabled
+                        onclick="submitForm(
+                            '{% url 'send_rejection_email' job.pk %}',
+                            'Send rejection email to selected candidates?'
+                        )">
+                    <i class="bi bi-envelope-x me-2"></i>
+                    Send Rejection Email
+                </button>
+            </div>
+        </div>
+
+        <!-- Ranking Table -->
+        <div class="card border-0 shadow-sm rounded-3">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4" style="width:50px;">Select</th>
+                            <th>Rank</th>
+                            <th>Candidate</th>
+                            <th>Match Score</th>
+                            <th>Matched Skills</th>
+                            <th>Missing Skills</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for result in results %}
+                        <tr class="candidate-row" id="row-{{ result.pk }}">
+
+                            <!-- Checkbox -->
+                            <td class="ps-4">
+                                <input type="checkbox"
+                                       name="selected_candidates"
+                                       value="{{ result.pk }}"
+                                       class="candidate-checkbox form-check-input mt-0"
+                                       style="width:16px; height:16px; cursor:pointer;">
+                            </td>
+
+                            <!-- Rank -->
+                            <td>
+                                {% if result.rank == 1 %}
+                                    <span class="badge bg-warning text-dark fs-6">🥇 #1</span>
+                                {% elif result.rank == 2 %}
+                                    <span class="badge bg-secondary fs-6">🥈 #2</span>
+                                {% elif result.rank == 3 %}
+                                    <span class="badge bg-danger bg-opacity-75 fs-6">🥉 #3</span>
+                                {% else %}
+                                    <span class="badge bg-light text-dark fs-6">#{{ result.rank }}</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Candidate -->
+                            <td>
+                                <div class="candidate-real">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <div style="width:32px; height:32px; background:#EFF6FF;
+                                                    color:#2563EB; border-radius:8px;
+                                                    display:flex; align-items:center;
+                                                    justify-content:center; font-weight:700;
+                                                    font-size:13px; flex-shrink:0;">
+                                            {{ result.candidate.full_name|first|upper }}
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold" style="font-size:13.5px;">
+                                                {{ result.candidate.full_name }}
+                                            </div>
+                                            <div class="text-muted small">
+                                                {% if result.candidate.email %}
+                                                    <i class="bi bi-envelope me-1"></i>
+                                                    {{ result.candidate.email }}
+                                                {% else %}
+                                                    <span class="text-danger">
+                                                        <i class="bi bi-exclamation-circle me-1"></i>
+                                                        No email on file
+                                                    </span>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="candidate-blind d-none">
+                                    <div class="fw-semibold text-secondary">
+                                        <i class="bi bi-person-fill-slash me-1"></i>
+                                        {{ result.candidate.blind_id }}
+                                    </div>
+                                    <div class="text-muted small">Identity Hidden</div>
+                                </div>
+                            </td>
+
+                            <!-- Match Score -->
+                            <td style="min-width:180px;">
+                                <div class="d-flex align-items-center gap-2">
+                                    <div class="progress flex-grow-1" style="height:8px;">
+                                        <div class="progress-bar
+                                            {% if result.match_percentage >= 70 %}bg-success
+                                            {% elif result.match_percentage >= 40 %}bg-warning
+                                            {% else %}bg-danger{% endif %}"
+                                            role="progressbar"
+                                            data-width="{{ result.match_percentage|floatformat:0 }}"
+                                            aria-valuemin="0" aria-valuemax="100">
+                                        </div>
+                                    </div>
+                                    <span class="fw-bold small
+                                        {% if result.match_percentage >= 70 %}text-success
+                                        {% elif result.match_percentage >= 40 %}text-warning
+                                        {% else %}text-danger{% endif %}">
+                                        {{ result.match_percentage }}%
+                                    </span>
+                                </div>
+                            </td>
+
+                            <!-- Matched Skills -->
+                            <td style="max-width:200px;">
+                                {% for skill in result.get_matched_skills_list|slice:":3" %}
+                                    <span class="badge bg-success bg-opacity-10
+                                                 text-success border border-success me-1 mb-1">
+                                        {{ skill }}
+                                    </span>
+                                {% endfor %}
+                                {% if result.get_matched_skills_list|length > 3 %}
+                                    <span class="badge bg-light text-muted border">
+                                        +{{ result.get_matched_skills_list|length|add:"-3" }}
+                                    </span>
+                                {% endif %}
+                                {% if not result.get_matched_skills_list %}
+                                    <span class="text-muted small">None</span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Missing Skills -->
+                            <td style="max-width:200px;">
+                                {% for skill in result.get_missing_skills_list|slice:":3" %}
+                                    <span class="badge bg-danger bg-opacity-10
+                                                 text-danger border border-danger me-1 mb-1">
+                                        {{ skill }}
+                                    </span>
+                                {% endfor %}
+                                {% if result.get_missing_skills_list|length > 3 %}
+                                    <span class="badge bg-light text-muted border">
+                                        +{{ result.get_missing_skills_list|length|add:"-3" }}
+                                    </span>
+                                {% endif %}
+                                {% if not result.get_missing_skills_list %}
+                                    <span class="text-success small">
+                                        <i class="bi bi-check-circle me-1"></i>All matched
+                                    </span>
+                                {% endif %}
+                            </td>
+
+                            <!-- Actions -->
+                            <td class="text-end pe-4">
+                                <div class="d-flex gap-2 justify-content-end">
+                                    <a href="{% url 'resume_result' result.resume.pk %}"
+                                       class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye me-1"></i>View
+                                    </a>
+                                    <a href="{% url 'skill_gap' result.pk %}"
+                                       class="btn btn-sm btn-outline-warning">
+                                        <i class="bi bi-bar-chart me-1"></i>Gap Analysis
+                                    </a>
+                                </div>
+                            </td>
+
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Info Note -->
+        <div class="mt-3 p-3 rounded-3"
+             style="background:#EFF6FF; border:1px solid #BFDBFE;">
+            <div class="d-flex align-items-start gap-2">
+                <i class="bi bi-info-circle-fill text-primary mt-1"></i>
+                <div style="font-size:13px; color:#1D4ED8;">
+                    <strong>How to use:</strong>
+                    Check candidates then click
+                    <strong>Send Selection Email</strong> to shortlist them, or
+                    <strong>Send Rejection Email</strong> to send a polite rejection.
+                    Candidates without an email on file will be skipped.
+                </div>
+            </div>
+        </div>
+
+    </form>
+
+    {% else %}
+    <div class="text-center py-5">
+        <i class="bi bi-people fs-1 text-muted"></i>
+        <h5 class="mt-3 text-muted">No candidates ranked yet</h5>
+        <p class="text-muted small">Upload resumes and run matching to see rankings.</p>
+        <a href="{% url 'resume_upload' %}" class="btn btn-primary mt-2">
+            <i class="bi bi-cloud-upload me-2"></i>Upload Resume
+        </a>
+    </div>
+    {% endif %}
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // ── Progress Bar Widths ──
+    document.querySelectorAll('.progress-bar[data-width]').forEach(bar => {
+        bar.style.width = bar.getAttribute('data-width') + '%';
+    });
+
+    // ── Blind Mode Toggle ──
+    const toggle = document.getElementById('blindModeToggle');
+    if (toggle) {
+        const label     = document.getElementById('blindModeLabel');
+        const realInfo  = document.querySelectorAll('.candidate-real');
+        const blindInfo = document.querySelectorAll('.candidate-blind');
+
+        toggle.addEventListener('change', function () {
+            if (this.checked) {
+                label.textContent = 'On';
+                label.classList.add('text-primary');
+                realInfo.forEach(el  => el.classList.add('d-none'));
+                blindInfo.forEach(el => el.classList.remove('d-none'));
+            } else {
+                label.textContent = 'Off';
+                label.classList.remove('text-primary');
+                realInfo.forEach(el  => el.classList.remove('d-none'));
+                blindInfo.forEach(el => el.classList.add('d-none'));
+            }
+        });
+    }
+
+    // ── Select All + Counter + Button Enable ──
+    const selectAll        = document.getElementById('selectAll');
+    const checkboxes       = document.querySelectorAll('.candidate-checkbox');
+    const sendSelectionBtn = document.getElementById('sendSelectionBtn');
+    const sendRejectionBtn = document.getElementById('sendRejectionBtn');
+    const selectedCount    = document.getElementById('selectedCount');
+
+    function updateState() {
+        const checked = document.querySelectorAll('.candidate-checkbox:checked').length;
+        selectedCount.textContent = `(${checked} selected)`;
+
+        // Enable/disable both buttons
+        sendSelectionBtn.disabled = checked === 0;
+        sendRejectionBtn.disabled = checked === 0;
+
+        // Highlight selected rows in light blue
+        checkboxes.forEach(cb => {
+            const row = cb.closest('tr');
+            row.style.background = cb.checked ? '#EFF6FF' : '';
+        });
+
+        // Update select all checkbox state
+        selectAll.checked       = checked === checkboxes.length && checkboxes.length > 0;
+        selectAll.indeterminate = checked > 0 && checked < checkboxes.length;
+    }
+
+    // ── Dynamic form action based on which button clicked ──
+    function submitForm(actionUrl, confirmMsg) {
+        if (!confirm(confirmMsg)) return;
+        const form = document.getElementById('candidateForm');
+        form.action = actionUrl;
+        form.submit();
+    }
+
+    // Select all checkbox
+    selectAll.addEventListener('change', function () {
+        checkboxes.forEach(cb => cb.checked = this.checked);
+        updateState();
+    });
+
+    // Individual checkboxes
+    checkboxes.forEach(cb => {
+        cb.addEventListener('change', updateState);
+    });
+</script>
+{% endblock %}
